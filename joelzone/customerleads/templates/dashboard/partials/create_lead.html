@@ -1,0 +1,17 @@
+{% load crispy_forms_tags %}
+
+<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+    <h1 style="font-size: 1.6rem; font-weight: 600; margin: 0;">Create New Lead</h1>
+</div>
+
+<div class="metric-card" style="text-align: left; padding: 2rem; max-width: 800px; margin: 0 auto;">
+    <form method="post" hx-post="{% url 'create_lead' %}" hx-target="#main-content" hx-swap="innerHTML">
+        {% csrf_token %}
+        {{ form|crispy }}
+        <div style="text-align: right; margin-top: 2rem;">
+            <button type="submit" class="btn btn-primary">
+                <i class="fas fa-save"></i> Save Lead
+            </button>
+        </div>
+    </form>
+</div>

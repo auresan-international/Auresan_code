@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+
+{% load humanize %}{% block title %}User: {{ user.get_full_name|default:user.username }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2>User Profile</h2>
+        <div>
+            <a href="{% url 'user_update' user.pk %}" class="btn btn-primary">Edit User</a>
+            <a href="{% url 'user_management' %}" class="btn btn-outline-secondary">Back to List</a>
+        </div>
+    </div>
+
+    <div class="card dashboard-card shadow-custom">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-4 text-center">
+                    {% comment %} <img src="{{ user.avatar.url|default:'/static/images/user-avatar.png' }}" {% endcomment %}
+                    <img src="" 
+                         alt="{{ user.get_full_name }}" 
+                         class="rounded-circle img-fluid mb-3" 
+                         style="max-width: 180px;">
+                </div>
+                <div class="col-md-8">
+                    <h3>{{ user.get_full_name|default:user.username }}</h3>
+                    <p class="text-muted">{{ user.job_title|default:"No job title" }}</p>
+                    
+                    <hr>
+                    
+                    <dl class="row">
+                        <dt class="col-sm-4">Email</dt>
+                        <dd class="col-sm-8">{{ user.email|default:"—" }}</dd>
+                        
+                        <dt class="col-sm-4">Username</dt>
+                        <dd class="col-sm-8">{{ user.username }}</dd>
+                        
+                        <dt class="col-sm-4">Status</dt>
+                        <dd class="col-sm-8">
+                            {% if user.is_active %}
+                                <span class="badge bg-success">Active</span>
+                            {% else %}
+                                <span class="badge bg-danger">Inactive</span>
+                            {% endif %}
+                        </dd>
+                        
+                        <dt class="col-sm-4">Role</dt>
+                        <dd class="col-sm-8">
+                            {% if user.is_superuser %}
+                                <span class="badge bg-danger">Superuser</span>
+                            {% elif user.is_staff %}
+                                <span class="badge bg-primary">Staff</span>
+                            {% else %}
+                                <span class="badge bg-secondary">User</span>
+                            {% endif %}
+                        </dd>
+                        
+                        <dt class="col-sm-4">Date Joined</dt>
+                        <dd class="col-sm-8">{{ user.date_joined|date:"d M Y H:i" }}</dd>
+                        
+                       <dt class="col-sm-4">Last Login</dt>
+                       <dd class="col-sm-8">{{ user.last_login|naturaltime|default:"Never" }}</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

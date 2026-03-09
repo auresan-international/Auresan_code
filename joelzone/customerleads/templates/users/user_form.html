@@ -1,0 +1,114 @@
+{% extends "base.html" %}
+
+{% block title %}Create User{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <h2>Create New User</h2>
+    
+    <div class="card dashboard-card shadow-custom">
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+
+                <div class="row g-3">
+                    <!-- Username & Email -->
+                    <div class="col-md-6">
+                        <label for="{{ form.username.id_for_label }}" class="form-label fw-bold">
+                            Username *
+                        </label>
+                        {{ form.username }}
+                        {% if form.username.errors %}<div class="invalid-feedback d-block">{{ form.username.errors }}</div>{% endif %}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="{{ form.email.id_for_label }}" class="form-label fw-bold">
+                            Email *
+                        </label>
+                        {{ form.email }}
+                        {% if form.email.errors %}<div class="invalid-feedback d-block">{{ form.email.errors }}</div>{% endif %}
+                    </div>
+
+                    <!-- First & Last Name -->
+                    <div class="col-md-6">
+                        <label for="{{ form.first_name.id_for_label }}" class="form-label fw-bold">
+                            First Name
+                        </label>
+                        {{ form.first_name }}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="{{ form.last_name.id_for_label }}" class="form-label fw-bold">
+                            Last Name
+                        </label>
+                        {{ form.last_name }}
+                    </div>
+
+                    <!-- Job Title -->
+                    <div class="col-md-6">
+                        <label for="{{ form.job_title.id_for_label }}" class="form-label fw-bold">
+                            Job Title
+                        </label>
+                        {{ form.job_title }}
+                    </div>
+
+                    <!-- Avatar -->
+                    <div class="col-md-6">
+                        <label for="{{ form.avatar.id_for_label }}" class="form-label fw-bold">
+                            Profile Picture
+                        </label>
+                        <input type="file" name="avatar" class="form-control" id="{{ form.avatar.id_for_label }}">
+                    </div>
+
+                    <!-- Passwords -->
+                    <div class="col-md-6">
+                        <label for="{{ form.password1.id_for_label }}" class="form-label fw-bold">
+                            Password *
+                        </label>
+                        {{ form.password1 }}
+                        {% if form.password1.errors %}<div class="invalid-feedback d-block">{{ form.password1.errors }}</div>{% endif %}
+                    </div>
+
+                    <div class="col-md-6">
+                        <label for="{{ form.password2.id_for_label }}" class="form-label fw-bold">
+                            Confirm Password *
+                        </label>
+                        {{ form.password2 }}
+                        {% if form.password2.errors %}<div class="invalid-feedback d-block">{{ form.password2.errors }}</div>{% endif %}
+                    </div>
+
+                    <!-- Role Selection (Beautiful Radio Buttons) -->
+                    <div class="col-12">
+                        <label class="form-label fw-bold">User Role *</label>
+                        <div class="d-flex gap-4">
+                            {% for value, label in form.role.field.choices %}
+                            <div class="form-check">
+                                <input type="radio" name="role" value="{{ value }}" 
+                                       class="form-check-input" id="role_{{ value }}"
+                                       {% if form.role.value == value %}checked{% endif %}>
+                                <label class="form-check-label" for="role_{{ value }}">
+                                    {{ label }}
+                                </label>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        {% if form.role.errors %}
+                            <div class="text-danger small mt-1">{{ form.role.errors }}</div>
+                        {% endif %}
+                    </div>
+
+                    <!-- Buttons -->
+                    <div class="col-12 mt-4 border-top pt-3 text-end">
+                        <a href="{% url 'user_management' %}" class="btn btn-outline-secondary px-4 me-2">
+                            Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary px-5">
+                            Create User
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

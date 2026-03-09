@@ -1,0 +1,109 @@
+<!-- templates/partials/dashboard.html -->
+<!-- Font Awesome is already loaded in the main staff.html, so we don't need it here. -->
+
+<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+    <h1 style="font-size: 1.6rem; font-weight: 600; margin: 0;">Dashboard</h1>
+
+    <div class="period-tabs">
+        <a href="?period=today"
+           class="period-tab {% if period == 'today' or not period %}active{% endif %}"
+           hx-get="{% url 'staff_dashboard' %}?period=today"
+           hx-target="#main-content"
+           hx-swap="innerHTML"
+           hx-push-url="true">
+            Today
+        </a>
+
+        <a href="?period=7days"
+           class="period-tab {% if period == '7days' %}active{% endif %}"
+           hx-get="{% url 'staff_dashboard' %}?period=7days"
+           hx-target="#main-content"
+           hx-swap="innerHTML"
+           hx-push-url="true">
+            7 days
+        </a>
+
+        <a href="?period=this_month"
+           class="period-tab {% if period == 'this_month' %}active{% endif %}"
+           hx-get="{% url 'staff_dashboard' %}?period=this_month"
+           hx-target="#main-content"
+           hx-swap="innerHTML"
+           hx-push-url="true">
+            This month
+        </a>
+
+        <a href="?period=last_month"
+           class="period-tab {% if period == 'last_month' %}active{% endif %}"
+           hx-get="{% url 'staff_dashboard' %}?period=last_month"
+           hx-target="#main-content"
+           hx-swap="innerHTML"
+           hx-push-url="true">
+            Last month
+        </a>
+    </div>
+</div>
+
+<div class="metrics-grid">
+    <div class="metric-card">
+        <div class="metric-title">Leads</div>
+        <div class="metric-value">{{ total_leads|default:0 }}</div>
+        <div class="metric-sub">Total: {{ total_leads|default:0 }}</div>
+    </div>
+
+    <div class="metric-card">
+        <div class="metric-title">Dialing</div>
+        <div class="metric-value">{{ dialing|default:0 }}</div>
+    </div>
+
+    <div class="metric-card">
+        <div class="metric-title">Clean approve</div>
+        <div class="metric-value">{{ clean_approve|default:"0%" }}</div>
+        <div class="metric-sub">Total: {{ qualified_count|default:0 }}</div>
+    </div>
+
+    <div class="metric-card">
+        <div class="metric-title">Cancellations</div>
+        <div class="metric-value">{{ cancellations|default:"0%" }}</div>
+        <div class="metric-sub">Total: {{ lost_count|default:0 }}</div>
+    </div>
+
+    <div class="metric-card">
+        <div class="metric-title">Recalls</div>
+        <div class="metric-value">{{ recalls|default:0 }}</div>
+    </div>
+
+    <div class="metric-card">
+        <div class="metric-title">Leads / hour</div>
+        <div class="metric-value">{{ leads_per_hour|default:0 }}</div>
+    </div>
+
+    <div class="metric-card">
+        <div class="metric-title">Buyout</div>
+        <div class="metric-value">{{ buyout|default:"0%" }}</div>
+        <div class="metric-sub">Total: {{ buyout|default:"0%" }}</div>
+    </div>
+
+    <div class="metric-card">
+        <div class="metric-title">Average check</div>
+        <div class="metric-value">{{ average_check|default:"$0.00" }}</div>
+        <div class="metric-sub">Total: {{ average_check|default:"$0.00" }}</div>
+    </div>
+
+    <div class="metric-card bonus-card">
+        <div class="metric-title">Bonuses</div>
+        <div class="metric-value">{{ bonuses|default:"0.00 c.u." }}</div>
+        <div style="margin-top: 0.8rem;">
+            <a href="#" style="color: #1e293b; font-weight: 600; text-decoration: none; border-bottom: 2px solid #1e293b; padding-bottom: 2px;">
+                More →
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Optional: small message when no data -->
+{% if total_leads == 0 and period == 'today' %}
+    <div style="text-align: center; margin-top: 3rem; color: var(--text-light);">
+        <i class="fas fa-inbox" style="font-size: 3rem; opacity: 0.4;"></i>
+        <p style="margin-top: 1rem;">No activity yet today.<br>Start making calls to see stats here.</p>
+    </div>
+{% endif %}

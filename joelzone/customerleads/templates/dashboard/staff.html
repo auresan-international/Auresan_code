@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lead Arena - Operator Dashboard</title>
+
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@2.0.1"></script>
+
+    {% load static %}
+    <!-- Link to your dashboard-specific stylesheet -->
+    <link rel="stylesheet" href="{% static 'css/staff_dashboard/dashboard_partial.css' %}">
+
+    <style>
+        :root {
+            --primary:    #1e40af;
+            --primary-dark: #1e3a8a;
+            --accent:     #3b82f6;
+            --success:    #10b981;
+            --warning:    #f59e0b;
+            --gray:       #6b7280;
+            --light:      #f3f4f6;
+            --bg:         #f8fafc;
+            --text:       #111827;
+            --text-light: #4b5563;
+            --border:     #e5e7eb;
+        }
+
+        * { margin:0; padding:0; box-sizing:border-box; }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.5;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            padding: 0.75rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+        }
+
+        .logo { font-size: 1.5rem; font-weight: 700; }
+
+        .header-controls { display: flex; align-items: center; gap: 1rem; }
+
+        .status-group {
+            display: flex;
+            gap: 0.5rem;
+            background: rgba(255,255,255,0.12);
+            padding: 0.35rem 0.6rem;
+            border-radius: 8px;
+        }
+
+        .status-btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            color: white;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            transition: all 0.18s;
+        }
+
+        .status-btn:hover { background: rgba(255,255,255,0.2); }
+
+        .start-btn { background: var(--success); }
+        .offline-btn { background: var(--gray); }
+
+        .user-section {
+            display: flex;
+            align-items: center;
+            gap: 0.9rem;
+            background: rgba(255,255,255,0.1);
+            padding: 0.4rem 0.9rem;
+            border-radius: 8px;
+        }
+
+        .dashboard-container {
+            display: flex;
+            min-height: calc(100vh - 62px);
+        }
+
+        .sidebar {
+            width: 220px;
+            background: white;
+            border-right: 1px solid var(--border);
+            padding: 1.25rem 0;
+        }
+
+        .sidebar-menu {
+            list-style: none;
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 0.9rem;
+            padding: 0.95rem 1.25rem;
+            color: var(--text-light);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .menu-item:hover,
+        .menu-item.active {
+            background: #eff6ff;
+            color: var(--accent);
+            border-left: 4px solid var(--accent);
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 1.5rem;
+            background: var(--light);
+            position: relative;
+        }
+
+        .htmx-indicator {
+            position: absolute;
+            inset: 0;
+            background: rgba(255,255,255,0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+
+        .htmx-request .htmx-indicator {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        @media (max-width: 1024px) {
+            .dashboard-container { flex-direction: column; }
+            .sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--border); }
+            .sidebar-menu { display: flex; overflow-x: auto; justify-content: center; padding: 0.5rem; }
+        }
+    </style>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="logo">Lead Arena</div>
+
+        <div class="header-controls">
+            <div class="status-group">
+                <button class="status-btn"><i class="fas fa-coffee"></i> On break</button>
+                <button class="status-btn"><i class="fas fa-book-open"></i> Education</button>
+                <button class="status-btn start-btn"><i class="fas fa-phone-volume"></i> Start calling</button>
+                <button class="status-btn offline-btn"><i class="fas fa-power-off"></i> Go offline</button>
+            </div>
+
+            <div class="user-section">
+                <div class="user-avatar">
+                    {% if user.first_name %}
+                        {{ user.first_name|slice:":1"|upper }}
+                    {% else %}
+                        {{ user.username|slice:":1"|upper }}
+                    {% endif %}
+                </div>
+                <div class="user-info">
+                    <span class="username">{{ user.get_full_name|default:user.username }}</span>
+                    <span class="user-role">- Operator</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="dashboard-container">
+
+        <!-- Sidebar with HTMX -->
+        <nav class="sidebar">
+            <ul class="sidebar-menu" id="sidebar-menu">
+                <li>
+                    <a href="{% url 'staff_dashboard' %}"
+                       class="menu-item active"
+                       hx-get="{% url 'staff_dashboard' %}"
+                       hx-target="#main-content"
+                       hx-swap="innerHTML"
+                       hx-push-url="true"
+                       hx-indicator=".htmx-indicator"
+                       hx-on::after-request="document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active')); this.classList.add('active')"
+                       >
+                        <i class="fas fa-home"></i> Dashboard
+                    </a>
+                </li>
+
+                <li>
+                    <a href="{% url 'create_lead' %}"
+                       class="menu-item"
+                       hx-get="{% url 'create_lead' %}"
+                       hx-target="#main-content"
+                       hx-swap="innerHTML"
+                       hx-push-url="true"
+                       hx-indicator=".htmx-indicator"
+                       hx-on::after-request="document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active')); this.classList.add('active')"
+                       >
+                        <i class="fas fa-users"></i> Create Lead
+                    </a>
+                </li>
+
+                <li>
+                    <a href="{% url 'my_conversations' %}" class="menu-item"
+
+                       hx-get="{% url 'my_conversations' %}"
+                       hx-target="#main-content"
+                       hx-swap="innerHTML"
+                       hx-push-url="true"
+                       hx-indicator=".htmx-indicator"
+                       hx-on::after-request="document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active')); this.classList.add('active')"
+                       >
+                        <i class="fas fa-comment-dots"></i> My conversations
+                    </a>
+                </li>
+
+                <li>
+                    <a href="{% url 'logout' %}"
+                       class="menu-item">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Main content area that will be replaced -->
+        <main id="main-content" class="main-content">
+            <!-- Loading indicator -->
+            <div class="htmx-indicator">
+                <i class="fas fa-spinner fa-spin fa-2x"></i>
+                <div style="margin-top: 1rem;">Loading...</div>
+            </div>
+
+            <!-- Initial content (dashboard) -->
+            {% include 'dashboard/partials/dashboard.html' %}
+        </main>
+    </div>
+
+    <!-- Optional: small script to help with active state on initial load / direct links -->
+    <script>
+        // Optional: make sure active class is correct when page loads directly
+        document.addEventListener('DOMContentLoaded', () => {
+            const currentPath = window.location.pathname;
+            document.querySelectorAll('.menu-item').forEach(link => {
+                if (link.getAttribute('href') === currentPath) {
+                    document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
+
+</body>
+</html>

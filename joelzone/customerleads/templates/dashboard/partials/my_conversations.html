@@ -1,0 +1,22 @@
+<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+    <h1 style="font-size: 1.6rem; font-weight: 600; margin: 0;">My Recent Conversations</h1>
+</div>
+
+<div class="metric-card" style="text-align: left; padding: 0;">
+    <ul style="list-style: none;">
+        {% for convo in conversations %}
+            <li style="padding: 1rem 1.5rem; border-bottom: 1px solid var(--border);">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <strong style="color: var(--primary);">{{ convo.lead.name }}</strong>
+                    <span style="font-size: 0.85rem; color: var(--text-light);">{{ convo.interaction_date|date:"M d, Y, P" }}</span>
+                </div>
+                <p style="margin: 0.5rem 0 0; color: var(--text-light);">
+                    <span style="background: #e0e7ff; color: var(--primary); padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.8rem; font-weight: 500;">{{ convo.get_interaction_type_display }}</span>
+                    {{ convo.notes|truncatewords:20 }}
+                </p>
+            </li>
+        {% empty %}
+            <li style="padding: 2rem; text-align: center; color: var(--text-light);">You have no logged conversations.</li>
+        {% endfor %}
+    </ul>
+</div>
