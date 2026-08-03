@@ -1,0 +1,73 @@
+{% extends 'website/base.html' %}
+
+{% block title %}Lead Arena | Natural Health Supplements{% endblock %}
+
+{% block content %}
+{% load static %}
+
+<!-- Hero Carousel -->
+<div id="heroCarousel" class="carousel slide" data-bs-ride="carousel">
+    <div class="carousel-indicators">
+        <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="0" class="active" aria-current="true"></button>
+        <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="1"></button>
+        <button type="button" data-bs-target="#heroCarousel" data-bs-slide-to="2"></button>
+    </div>
+    <div class="carousel-inner">
+        <div class="carousel-item active" style="background: linear-gradient(135deg, #f8fafc, #e2e8f0); padding: 4rem 2rem;">
+            <div class="container text-center">
+                <h1 class="display-4 fw-bold">Transform Your Health Naturally</h1>
+                <p class="lead">Premium supplements for weight management, immunity, and overall wellness.</p>
+                <a href="{% url 'website:order_create' %}" class="btn btn-primary btn-lg mt-3">Shop Now</a>
+            </div>
+        </div>
+        <div class="carousel-item" style="background: linear-gradient(135deg, #fef9e7, #fdebd0); padding: 4rem 2rem;">
+            <div class="container text-center">
+                <h1 class="display-4 fw-bold">Special Offer – 20% Off</h1>
+                <p class="lead">Use code <strong>HEALTH20</strong> at checkout. Limited time!</p>
+                <a href="{% url 'website:order_create' %}" class="btn btn-success btn-lg mt-3">Claim Discount</a>
+            </div>
+        </div>
+        <div class="carousel-item" style="background: linear-gradient(135deg, #e8f5e9, #c8e6c9); padding: 4rem 2rem;">
+            <div class="container text-center">
+                <h1 class="display-4 fw-bold">New Arrivals</h1>
+                <p class="lead">Discover our latest natural supplements for men's and women's health.</p>
+                <a href="{% url 'website:product_list' %}" class="btn btn-outline-dark btn-lg mt-3">Explore</a>
+            </div>
+        </div>
+    </div>
+    <button class="carousel-control-prev" type="button" data-bs-target="#heroCarousel" data-bs-slide="prev">
+        <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+        <span class="visually-hidden">Previous</span>
+    </button>
+    <button class="carousel-control-next" type="button" data-bs-target="#heroCarousel" data-bs-slide="next">
+        <span class="carousel-control-next-icon" aria-hidden="true"></span>
+        <span class="visually-hidden">Next</span>
+    </button>
+</div>
+
+
+<div class="hero text-center">
+    <div style="max-width: 960px; margin: 0 auto; text-align: center;">
+        <h1 style="font-size: 2.2rem;">Transform Your Health Naturally</h1>
+        <p style="margin-top: 0.75rem; color: #475569;">Premium food supplements for weight management, immunity, diabetes support, men's health, women's health and general wellness.</p>
+        <div style="display:flex; gap:0.75rem; justify-content:center; margin-top:1rem; flex-wrap:wrap;">
+            <a href="{% url 'website:order_create' %}" class="btn btn-primary">Order Now</a>
+            <a href="{% url 'website:callback' %}" class="btn btn-outline">Request a Callback</a>
+            <a href="https://wa.me/" class="btn btn-success">WhatsApp Us</a>
+        </div>
+    </div>
+
+    <div style="max-width: 1100px; margin: 2rem auto; display:grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap:1rem;">
+        {% for p in products %}
+        <div style="background:white; padding:1rem; border-radius:8px; border:1px solid #e6eef8;">
+            <h3>{{ p.title }}</h3>
+            <p style="color:#64748b;">{{ p.short_description|truncatewords:20 }}</p>
+            <div style="display:flex; gap:0.5rem; margin-top:0.75rem;">
+                <a href="{{ p.get_absolute_url }}" class="btn btn-sm">View</a>
+                <a href="{% url 'website:order_create' %}" class="btn btn-sm btn-primary">Order</a>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

@@ -37,10 +37,9 @@ class CustomUser(AbstractUser):
         return self.get_full_name()
 
 
-# --- 2. CRM MODELS ---
+# --- Lead MODEL ---
 
 class Lead(models.Model):
-    # Define choices as class attributes (best practice)
     STATUS_CHOICES = [
         ('new', 'New'),
         ('contacted', 'Contacted'),
@@ -66,17 +65,55 @@ class Lead(models.Model):
         ('other', 'Other'),
     ]
 
+    # Basic Information
     name = models.CharField(max_length=100)
     email = models.EmailField()
     phone = models.CharField(max_length=20, blank=True)
     company = models.CharField(max_length=100, blank=True)
+
+    # Status & Tracking
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='new')
     priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='medium')
     source = models.CharField(max_length=20, choices=SOURCE_CHOICES, default='website')
+
+    # === Order / Delivery Fields ===
+    quantity = models.PositiveIntegerField(null=True, blank=True)
+    total = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+
+    russian_post_track = models.CharField(max_length=100, blank=True)
+    index = models.CharField(max_length=20, blank=True, verbose_name="Postal Index")
+    region = models.CharField(max_length=100, blank=True)
+    city = models.CharField(max_length=100, blank=True)
+    district = models.CharField(max_length=100, blank=True)
+    address = models.TextField(blank=True)
+
+    delivery_time = models.CharField(max_length=100, blank=True)
+
+    # Customer Info
+    sex = models.CharField(max_length=20, blank=True, verbose_name="Gender")
+    age = models.PositiveIntegerField(null=True, blank=True)
+
+    # Reasons
+    cancellation_reason = models.TextField(blank=True)
+    return_reason = models.TextField(blank=True)
+    spam_reason = models.TextField(blank=True)
+
+    # General fields
+    comment = models.TextField(blank=True)                    # ← Added this
+    additional_field_14 = models.TextField(blank=True, verbose_name="Additional Field #14")
+
+    # Notes (for any extra information)
     notes = models.TextField(blank=True)
+
+    # Metadata
     created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='leads')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "Lead"
+        verbose_name_plural = "Leads"
 
     def __str__(self):
         return f"{self.name} - {self.company}" if self.company else self.name
@@ -85,7 +122,6 @@ class Lead(models.Model):
         return reverse('lead_detail', kwargs={'pk': self.pk})
 
     def get_status_color(self):
-        """Returns a bootstrap color class based on lead status."""
         return {
             'new': 'primary',
             'contacted': 'info',
@@ -94,7 +130,6 @@ class Lead(models.Model):
             'negotiation': 'primary',
             'closed': 'success',
             'lost': 'danger',
-            'converted': 'success',
         }.get(self.status, 'secondary')
 
 class Deal(models.Model):
@@ -221,3 +256,11 @@ def create_user_profile(sender, instance, created, **kwargs):
 def save_user_profile(sender, instance, **kwargs):
     if hasattr(instance, 'profile'):
         instance.profile.save()
+
+class CallLog(models.Model):
+    lead = models.ForeignKey(Lead, on_delete=models.CASCADE)
+    session_id = models.CharField(max_length=100, blank=True)
+    status = models.CharField(max_length=50)
+    direction = models.CharField(max_length=20)
+    duration = models.IntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)

@@ -1,0 +1,21 @@
+{% extends 'website/base.html' %}
+
+{% block title %}{{ condition.title }} | Lead Arena{% endblock %}
+
+{% block content %}
+<div class="page-banner" style="max-width:900px; margin:0 auto;">
+    <h1>{{ condition.title }}</h1>
+    <p style="color:#64748b;">{{ condition.description }}</p>
+
+    <h3>Recommended Products</h3>
+    <div style="display:grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap:0.75rem;">
+        {% for p in recommended %}
+            <div style="background:white; padding:0.75rem; border:1px solid #f1f5f9; border-radius:8px;">
+                <strong>{{ p.title }}</strong>
+                <p style="color:#64748b;">{{ p.short_description|truncatewords:20 }}</p>
+                <a href="{{ p.get_absolute_url }}" class="btn btn-sm">View</a>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}

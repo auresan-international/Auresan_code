@@ -1,24 +1,87 @@
+from django.http import JsonResponse, HttpResponse
 from django.shortcuts import render, redirect, get_object_or_404
-from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, TemplateView
-from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView, TemplateView, View
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth import authenticate, login
+from django.contrib.auth import authenticate, login, logout
 from django.db.models import Sum, Count, Q, Avg
-from django.utils import timezone
-from django.urls import reverse_lazy
-from django.contrib import messages
-from .models import Lead, Client, Interaction, Task, UserProfile
-from .forms import CustomUserCreationForm, LeadForm, ClientForm, InteractionForm, TaskForm,DealForm
-from django.contrib.auth.views import LoginView, LogoutView
-from django.utils.decorators import method_decorator
-from django.views.generic import View
 from django.utils import timezone
 from datetime import timedelta
 from django.core.paginator import Paginator
-from .models import Deal
-
+from django.urls import reverse, reverse_lazy
+from django.contrib import messages
 from django.contrib.auth import get_user_model
+from django.contrib.auth.views import LoginView, LogoutView
+from django.contrib.messages.views import SuccessMessageMixin
+from .models import CallLog, Lead, Client, Interaction, Task, UserProfile, Deal
+from .forms import CustomUserCreationForm, LeadForm, ClientForm, InteractionForm, TaskForm, DealForm
+import africastalking
+from django.conf import settings
+from django.contrib.auth.models import User
+from django.contrib.auth.forms import UserChangeForm
 User = get_user_model()
+from .utils import voice
+from django.db import transaction
+from django.utils.decorators import method_decorator
+from .utils import format_phone_to_e164
+
+
+def build_operator_chart_data():
+    labels = ['Time in calls', 'Idle', 'On break', 'On education', 'Calls received', 'Not answered', 'Chats handled']
+    values = [42, 18, 8, 5, 20, 4, 13]
+    colors = ['#2563eb', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444', '#64748b', '#14b8a6']
+    total = sum(values)
+    segments = []
+    start = 0
+
+    for value, color in zip(values, colors):
+        percentage = (value / total * 100) if total else 0
+        end = start + percentage
+        segments.append(f"{color} {start:.1f}% {end:.1f}%")
+        start = end
+
+    stats = []
+    for label, value, color in zip(labels, values, colors):
+        pct = round((value / total * 100), 1) if total else 0
+        stats.append({'label': label, 'value': value, 'color': color, 'percentage': pct})
+
+    return {
+        'labels': labels,
+        'values': values,
+        'colors': colors,
+        'stats': stats,
+        'style': f"conic-gradient({' ,'.join(segments)});",
+        'total': total,
+    }
+
+
+def build_operator_conversations(request):
+    call_logs = CallLog.objects.filter(lead__created_by=request.user).select_related('lead').order_by('-created_at')[:8]
+    interactions = Interaction.objects.filter(created_by=request.user).select_related('lead').order_by('-interaction_date')[:8]
+
+    items = []
+    for call_log in call_logs:
+        items.append({
+            'id': f'call-{call_log.id}',
+            'kind': 'call',
+            'title': f"Call with {call_log.lead.name}",
+            'summary': call_log.status.replace('_', ' ').title() if call_log.status else 'Recorded call session',
+            'timestamp': call_log.created_at,
+            'recording_url': '#',
+        })
+
+    for interaction in interactions:
+        items.append({
+            'id': f'interaction-{interaction.id}',
+            'kind': 'chat' if interaction.interaction_type == 'other' else 'interaction',
+            'title': f"{interaction.get_interaction_type_display()} with {interaction.lead.name}",
+            'summary': interaction.notes[:140] if interaction.notes else 'Conversation notes captured',
+            'timestamp': interaction.interaction_date,
+            'recording_url': None,
+        })
+
+    items.sort(key=lambda item: item['timestamp'], reverse=True)
+    return items[:12]
 
 
 # Create your views here.
@@ -51,7 +114,6 @@ def dashboard_view(request):
 
 # Authentication Views
 
-from django.urls import reverse
 
 class CustomLoginView(LoginView):
     template_name = 'accounts/login_form.html'
@@ -81,13 +143,14 @@ class CustomLoginView(LoginView):
         )
         return response
 
-class CustomLogoutView(LogoutView):
-    next_page = reverse_lazy('login')
-    
-    def dispatch(self, request, *args, **kwargs):
-        if request.user.is_authenticated:
-            messages.info(request, 'You have been logged out successfully.')
-        return super().dispatch(request, *args, **kwargs)
+class CustomLogoutView(View):
+    def get(self, request):
+        logout(request)
+        messages.info(request, 'You have been logged out successfully.')
+        return redirect('login')
+
+    def post(self, request):
+        return self.get(request)
 
 
 # Optional: Keep this for manual redirects or future use
@@ -103,7 +166,6 @@ class DashboardRedirectView(View):
             return redirect('staff_dashboard')
 
 
-from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 
 class AdminDashboardView(UserPassesTestMixin, TemplateView):
     template_name = 'admin/dashboard.html'
@@ -309,10 +371,6 @@ class UserManagementView(LoginRequiredMixin, ListView):
 
         return context
 
-# -------------------------------------------------------- create user --------------
-from django.contrib.auth.forms import UserCreationForm
-from django.contrib.messages.views import SuccessMessageMixin
-from django.contrib import messages
 
 class UserCreateView(LoginRequiredMixin, SuccessMessageMixin, CreateView):
     model = get_user_model()
@@ -326,7 +384,6 @@ class UserCreateView(LoginRequiredMixin, SuccessMessageMixin, CreateView):
         return super().form_valid(form)
     
 #-------------------------------------------------------- Detail view ----------------
-from django.views.generic import DetailView
 
 class UserDetailView(LoginRequiredMixin, DetailView):
     model = get_user_model()
@@ -335,8 +392,6 @@ class UserDetailView(LoginRequiredMixin, DetailView):
     pk_url_kwarg = 'pk'
 
 #------------------------------------------------------------ Update view ----------------
-from django.views.generic import UpdateView
-from django.contrib.auth.forms import UserChangeForm
 
 class UserUpdateView(LoginRequiredMixin, SuccessMessageMixin, UpdateView):
     model = User
@@ -352,7 +407,6 @@ class UserUpdateView(LoginRequiredMixin, SuccessMessageMixin, UpdateView):
         return form
 
 #------------------------------------------------------------ delete view ----------------
-from django.views.generic import DeleteView
 
 class UserDeleteView(LoginRequiredMixin, SuccessMessageMixin, DeleteView):
     model = User
@@ -526,21 +580,110 @@ class InteractionCreateView(LoginRequiredMixin, CreateView):
         form.instance.created_by = self.request.user
         messages.success(self.request, 'Interaction logged successfully!')
         return super().form_valid(form)
-    
-from twilio.rest import Client
-from django.conf import settings
-from django.http import JsonResponse
-def initiate_call(request, lead_id):
-    lead = get_object_or_404(Lead, id=lead_id)
-    client = Client(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
 
-    call = client.calls.create(
-        url='http://demo.twilio.com/docs/voice.xml', # Your TwiML instructions
-        to=lead.phone,
-        from_=settings.TWILIO_PHONE_NUMBER
-    )
-    return JsonResponse({'status': 'success', 'call_sid': call.sid})
+def format_phone_to_e164(phone_number):
+    """Helper to convert local numbers to E.164 format for Africa's Talking."""
+    if not phone_number:
+        return None
+    # Remove all non-numeric characters
+    clean_number = "".join(filter(str.isdigit, phone_number))
+    # Handle Kenyan numbers starting with 0 (Standard for AT sandbox/Kenya)
+    if clean_number.startswith('0') and len(clean_number) == 10:
+        return "+254" + clean_number[1:]
+    if not phone_number.startswith('+'):
+        return "+" + clean_number
+    return phone_number
 
+# =======================================auto dail-===========================
+
+from .models import Lead, CallLog
+from .utils import format_phone_to_e164  # Ensure this utility handles 0700... formats properly
+
+africastalking.initialize(settings.AFRICASTALKING_USERNAME, settings.AFRICASTALKING_API_KEY)
+voice = africastalking.Voice
+
+@login_required
+def start_auto_dial(request):
+    with transaction.atomic():
+        # 1. Fetch the next new lead using a row-level lock
+        next_lead = (
+            Lead.objects.select_for_update()
+            .filter(status='new')
+            .order_by('created_at')
+            .first()
+        )
+
+        # Handle case where queue is empty
+        if not next_lead:
+            return HttpResponse(
+                '<button class="btn btn-warning" disabled>'
+                '<i class="fas fa-exclamation-triangle"></i> No new leads in queue.'
+                '</button>'
+            )
+
+        # 2. Format the phone number to E.164
+        formatted_phone = format_phone_to_e164(next_lead.phone)
+
+        # CRITICAL PROTECTION: Catch cases where formatting results in empty, "+", or too short string
+        if not formatted_phone or formatted_phone == "+" or len(formatted_phone) < 10:
+            # Move the lead out of 'new' so it doesn't brick your auto-dial loop
+            next_lead.status = 'failed'
+            next_lead.save()
+            
+            return HttpResponse(
+                f'<div class="alert alert-warning mb-0">'
+                f'<i class="fas fa-times-circle"></i> Skipped <strong>{next_lead.name}</strong> (Invalid phone: {next_lead.phone})'
+                f'</div>'
+            )
+
+        # 3. Trigger the Outbound Call via AfricasTalking
+        try:
+            call_response = voice.call(
+                settings.AFRICASTALKING_VIRTUAL_NUMBER,
+                formatted_phone
+            )
+
+            # Safely parse the sessionId from the response payload
+            session_id = None
+            try:
+                if isinstance(call_response, dict):
+                    session_id = call_response.get("entries", [{}])[0].get("sessionId")
+                else:
+                    session_id = call_response['entries'][0]['sessionId']
+            except Exception:
+                pass
+
+            # 4. Update Lead Status on success
+            next_lead.status = 'contacted'
+            next_lead.last_contacted_at = timezone.now()
+            next_lead.save()
+
+            # 5. Log the Action
+            CallLog.objects.create(
+                lead=next_lead,
+                session_id=session_id or "",
+                status="initiated",
+                direction="outbound"
+            )
+
+            # 6. Return Success UI snippet back to HTMX
+            return HttpResponse(
+                f'<div class="alert alert-success d-flex align-items-center mb-0">'
+                f'<i class="fas fa-spinner fa-spin me-2"></i> Calling <strong>{next_lead.name}</strong> ({formatted_phone})...'
+                f'</div>'
+            )
+
+        except Exception as e:
+            # SAFETY FALLBACK: If AT API rejects the call, mark lead status to prevent infinite loop
+            next_lead.status = 'failed'
+            next_lead.save()
+
+            # Return Error UI snippet back to HTMX if SDK or networking fails
+            return HttpResponse(
+                f'<div class="alert alert-danger mb-0">'
+                f'<i class="fas fa-exclamation-circle"></i> Call failed for {next_lead.name}: {str(e)}'
+                f'</div>'
+            )
 # Task Management Views
 class TaskListView(LoginRequiredMixin, ListView):
     model = Task
@@ -651,115 +794,164 @@ def mark_task_complete(request, task_id):
 from datetime import timedelta
 from decimal import Decimal
 
+@login_required
 def operator_dashboard(request):
-    period = request.GET.get('period', 'today')  # default: today
+    # 1. Get current time context
+    now = timezone.now()
+    period = request.GET.get('period', 'today')
 
-    today = timezone.now().date()
-    start_date = today
+    # 2. Base querysets
+    # For the table: Always fetch EVERY SINGLE lead across your whole system
+    all_leads_table = Lead.objects.all().order_by('-created_at')
+    
+    # For metrics: We filter this queryset down based on the active period tab
+    metrics_query = Lead.objects.all()
 
+    # 3. Apply Date Adjustments for Metrics Filter
     if period == 'today':
-        start_date = today
+        start_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        metrics_query = metrics_query.filter(created_at__gte=start_date)
+        
     elif period == '7days':
-        start_date = today - timedelta(days=7)
+        start_date = now - timedelta(days=7)
+        metrics_query = metrics_query.filter(created_at__gte=start_date)
+        
     elif period == 'this_month':
-        start_date = today.replace(day=1)
+        start_date = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        metrics_query = metrics_query.filter(created_at__gte=start_date)
+        
     elif period == 'last_month':
-        first_this_month = today.replace(day=1)
-        start_date = (first_this_month - timedelta(days=1)).replace(day=1)
-        end_date = first_this_month - timedelta(days=1)
-    else:
-        period = 'today' 
+        # Calculate the first and last day of previous month
+        first_of_this_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        last_day_of_last_month = first_of_this_month - timedelta(seconds=1)
+        first_day_of_last_month = last_day_of_last_month.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        
+        metrics_query = metrics_query.filter(
+            created_at__gte=first_day_of_last_month,
+            created_at__lte=last_day_of_last_month
+        )
 
-    end_date = today if period != 'last_month' else end_date
-
-    leads = Lead.objects.filter(
-        created_by=request.user,
-        created_at__date__gte=start_date,
-        created_at__date__lte=end_date if 'end_date' in locals() else today
+# 4. Aggregate Metric Calculations (Optimized to hit DB once)
+    aggregates = metrics_query.aggregate(
+        # CHANGED: renamed from 'total' to 'total_count' to avoid field name collision
+        total_count=Count('id'),
+        
+        # Counts based on your custom Lead status tags
+        dialing_cnt=Count('id', filter=Q(status='dialing')),
+        approved_cnt=Count('id', filter=Q(status='approved')),  
+        cancelled_cnt=Count('id', filter=Q(status='cancelled')),
+        recall_cnt=Count('id', filter=Q(status='recall')),
+        
+        # Financial analytics - now safely points to your model's actual 'total' field
+        avg_check=Avg('total', filter=Q(total__gt=0))  
     )
 
-    # ────────────────────────────────────────────────
-    # Calculate metrics
-    # ────────────────────────────────────────────────
+    # Extract aggregated data safely with modified key name
+    total_leads = aggregates['total_count'] or 0
+    dialing = aggregates['dialing_cnt'] or 0
+    qualified_count = aggregates['approved_cnt'] or 0
+    lost_count = aggregates['cancelled_cnt'] or 0
+    recalls = aggregates['recall_cnt'] or 0
+    avg_check_val = aggregates['avg_check'] or 0.0000
 
-    total_leads = leads.count()
+    # 5. Calculate Percentages for Dashboard Layouts
+    clean_approve = "0%"
+    cancellations = "0%"
+    if total_leads > 0:
+        clean_approve = f"{(qualified_count / total_leads) * 100:.1f}%"
+        cancellations = f"{(lost_count / total_leads) * 100:.1f}%"
 
-    dialing = leads.filter(status='contacted').count()
+    # Mock placeholders for business logic aggregates not strictly mapping to a Lead field
+    # Replace these formulas with your specific phone-system metrics or profile models if tracked
+    leads_per_hour = round(total_leads / 8, 1) if period == 'today' else round(total_leads / 40, 1)
+    buyout = "0%" if total_leads == 0 else f"{(qualified_count / total_leads) * 92:.1f}%" 
+    bonuses = f"{qualified_count * 5.50:.2f} c.u."  # Base structural multiplier example
 
-    qualified_or_better = leads.filter(
-        status__in=['qualified', 'proposal', 'negotiation', 'closed']
-    ).count()
-    clean_approve_pct = round((qualified_or_better / total_leads * 100) if total_leads > 0 else 0, 1)
+    # 6. Format Financial Currency Checks
+    average_check = f"${avg_check_val:,.2f}"
 
-    cancellations = leads.filter(status='lost').count()
-    cancellations_pct = round((cancellations / total_leads * 100) if total_leads > 0 else 0, 1)
-    recalls = 0
-
-    leads_per_hour = 0
-    if total_leads > 0 and period == 'today':
-        first_lead_time = leads.order_by('created_at').first()
-        if first_lead_time:
-            hours_active = max((timezone.now() - first_lead_time.created_at).total_seconds() / 3600, 1)
-            leads_per_hour = round(total_leads / hours_active, 1)
-
-    buyout_pct = 0
-
-    avg_check = Deal.objects.filter(
-        owner=request.user,
-        created_at__date__gte=start_date,
-        created_at__date__lte=end_date if 'end_date' in locals() else today
-    ).aggregate(avg=Avg('value'))['avg'] or Decimal('0.00')
-
-    bonuses = Decimal('0.00')
-
+    # 7. Construct Full UI Template Context Map
     context = {
+        # Master table contains EVERYTHING
+        'leads': all_leads_table,
+        
+        # Control & Card tracking filters
         'period': period,
         'total_leads': total_leads,
         'dialing': dialing,
-        'clean_approve': f"{clean_approve_pct}%",
-        'cancellations': f"{cancellations_pct}%",
+        'clean_approve': clean_approve,
+        'qualified_count': qualified_count,
+        'cancellations': cancellations,
+        'lost_count': lost_count,
         'recalls': recalls,
         'leads_per_hour': leads_per_hour,
-        'buyout': f"{buyout_pct}%",
-        'average_check': f"${avg_check:,.2f}",
-        'bonuses': f"{bonuses:,.2f} c.u.",
-        # Add counts for the template
-        'qualified_count': qualified_or_better,
-        'lost_count': cancellations,
+        'buyout': buyout,
+        'average_check': average_check,
+        'bonuses': bonuses,
+        'active_tab': 'dashboard',
+        'content_template': 'dashboard/partials/dashboard.html',
+        'chart_data': build_operator_chart_data(),
+        'conversation_items': build_operator_conversations(request),
     }
 
+    # 8. Clean HTMX Swapping Engine routing
     if request.htmx:
-        # For HTMX requests, return only the partial that needs to be updated.
         return render(request, 'dashboard/partials/dashboard.html', context)
-
-    # For regular page loads, return the full page.
     return render(request, 'dashboard/staff.html', context)
 
 @login_required
 def create_lead_view(request):
-    """
-    Handles GET requests to show a lead creation form and
-    POST requests to create a new lead. Designed for HTMX.
-    """
     if request.method == 'POST':
         form = LeadForm(request.POST)
         if form.is_valid():
             lead = form.save(commit=False)
             lead.created_by = request.user
+            if not lead.status:
+                lead.status = 'new'
             lead.save()
+
             messages.success(request, f"Lead '{lead.name}' created successfully!")
-            # A full redirect is the simplest way to refresh state after creation
+
+            if request.htmx:
+                # return ONLY partial HTML, not full dashboard
+                form = LeadForm()  # reset form
+                return render(request, 'leads/create_lead.html', {
+                    'form': form,
+                    'success': True
+                })
+
             return redirect('staff_dashboard')
+
     else:
         form = LeadForm()
 
-    context = {'form': form}
+    return render(request, 'leads/create_lead.html', {'form': form})
 
-    if request.htmx:
-        return render(request, 'dashboard/partials/create_lead.html', context)
+@login_required
+def call_lead(request, lead_id):
+    lead = Lead.objects.get(id=lead_id)
 
-    # For direct access, just go to the main dashboard page
-    return redirect('staff_dashboard')
+    try:
+        response = voice.call(
+            callerId=settings.AFRICASTALKING_VIRTUAL_NUMBER,
+            callAttempts=[
+                {
+                    "phoneNumber": lead.phone
+                }
+            ]
+        )
+
+        return JsonResponse({
+            "success": True,
+            "message": "Call initiated",
+            "response": str(response)
+        })
+
+    except Exception as e:
+        return JsonResponse({
+            "success": False,
+            "error": str(e)
+        })
 
 @login_required
 def my_conversations_view(request):
@@ -771,10 +963,28 @@ def my_conversations_view(request):
         created_by=request.user
     ).select_related('lead').order_by('-interaction_date')[:50]
 
-    context = {'conversations': conversations}
+    context = {
+        'conversations': conversations,
+        'conversation_items': build_operator_conversations(request),
+        'active_tab': 'conversations',
+        'content_template': 'dashboard/partials/my_conversations.html',
+    }
 
     if request.htmx:
         return render(request, 'dashboard/partials/my_conversations.html', context)
 
-    # For direct access, just go to the main dashboard page
-    return redirect('staff_dashboard')
+    return render(request, 'dashboard/staff.html', context)
+
+
+@login_required
+def staff_charts_view(request):
+    context = {
+        'active_tab': 'charts',
+        'content_template': 'dashboard/partials/charts.html',
+        'chart_data': build_operator_chart_data(),
+    }
+
+    if request.htmx:
+        return render(request, 'dashboard/partials/charts.html', context)
+
+    return render(request, 'dashboard/staff.html', context)

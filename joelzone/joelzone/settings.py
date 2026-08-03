@@ -43,8 +43,7 @@ INSTALLED_APPS = [
     'crispy_bootstrap5',
     'django_htmx',
     'customerleads',
-
-    
+    'website',    
 ]
 
 MIDDLEWARE = [
@@ -71,33 +70,15 @@ CRISPY_TEMPLATE_PACK = "bootstrap5"
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
-                'django.template.context_processors.csrf'
-                
-                # Add this line
+                'django.template.context_processors.csrf',
                 'customerleads.context_processors.login_form_processor',
-            ],
-        },
-    },
-]
-
-TEMPLATES = [
-    {
-        'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        # 🌟 FIX: Point this to your project-level templates folder
-        'DIRS': [BASE_DIR / 'templates'], 
-        'APP_DIRS': True,
-        'OPTIONS': {
-            'context_processors': [
-                'django.template.context_processors.request',
-                'django.contrib.auth.context_processors.auth',
-                'django.contrib.messages.context_processors.messages',
             ],
         },
     },
@@ -147,6 +128,9 @@ USE_I18N = True
 
 USE_TZ = True
 
+# Security: Expire session when browser is closed
+SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
@@ -161,3 +145,8 @@ STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Africa's Talking Configuration
+AFRICASTALKING_USERNAME = 'leadarena'
+AFRICASTALKING_API_KEY = 'atsk_eb1cf9d84b3f1e410d6ffb2d2f6d6881f02faeb322a186c83e8cc9e0f633416157cdd933'
+AFRICASTALKING_VIRTUAL_NUMBER = '+256323200925' # Your AT sandbox number

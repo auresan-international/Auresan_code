@@ -1,10 +1,34 @@
 from django import forms
 from django.contrib.auth import get_user_model
-from .models import Lead, Client, Interaction, Task,Deal,CustomUser
 from django.contrib.auth.forms import UserCreationForm
+from .models import Lead, Client, Interaction, Task, Deal, CustomUser
+
+# --- UTILITY MIXIN FOR BULK STYLING ---
+class ProfessionalFormMixin:
+    """
+    Automatically applies professional Bootstrap form styling to any form inherits it.
+    Matches inputs, selects, textareas, and special HTML5 fields.
+    """
+    def apply_professional_styles(self):
+        for field_name, field in self.fields.items():
+            # Apply styling classes based on widget type
+            if isinstance(field.widget, forms.Select):
+                field.widget.attrs.update({'class': 'form-select'})
+            elif isinstance(field.widget, forms.Textarea):
+                field.widget.attrs.update({'class': 'form-control', 'rows': 3})
+            elif isinstance(field.widget, (forms.TextInput, forms.EmailInput, forms.NumberInput, forms.URLInput)):
+                field.widget.attrs.update({'class': 'form-control'})
+            elif isinstance(field.widget, (forms.DateInput, forms.DateTimeInput)):
+                field.widget.attrs.update({'class': 'form-control'})
+            
+            # Optional: Add clear placeholders if they don't have them
+            if not field.widget.attrs.get('placeholder') and field.label:
+                field.widget.attrs.update({'placeholder': f'Enter {field.label.lower()}'})
 
 
-class CustomUserCreationForm(UserCreationForm):
+# --- FORMS ---
+
+class CustomUserCreationForm(UserCreationForm, ProfessionalFormMixin):
     class Meta:
         model = CustomUser
         fields = [
@@ -14,12 +38,8 @@ class CustomUserCreationForm(UserCreationForm):
             'last_name',
             'job_title',
             'avatar',
-            'password1',
-            'password2',
-            'role',          # ← new field (not a real model field)
         ]
 
-    # Virtual field for choosing role
     role = forms.ChoiceField(
         choices=[
             ('staff', 'Staff (Regular Staff)'),
@@ -33,25 +53,22 @@ class CustomUserCreationForm(UserCreationForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Make avatar optional
         self.fields['avatar'].required = False
         self.fields['job_title'].required = False
+        self.apply_professional_styles()
 
     def save(self, commit=True):
         user = super().save(commit=False)
-        
-        # Set role based on selection
         role = self.cleaned_data['role']
         if role == 'administrator':
             user.is_superuser = True
             user.is_staff = True
-        else:  # staff
+        else:
             user.is_superuser = False
-            user.is_staff = True  # Staff still needs is_staff=True to access admin
+            user.is_staff = True
 
         if commit:
             user.save()
-            # Update UserProfile role based on selection
             if hasattr(user, 'profile'):
                 if role == 'administrator':
                     user.profile.role = 'admin'
@@ -60,37 +77,63 @@ class CustomUserCreationForm(UserCreationForm):
                 user.profile.save()
         return user
 
-class LeadForm(forms.ModelForm):
+
+class LeadForm(forms.ModelForm, ProfessionalFormMixin):
     class Meta:
         model = Lead
-        fields = [
-            'name',
-            'email',
-            'phone',
-            'company',
-            'status',
-            'priority',
-            'source',
-            'notes',
-            # Add 'assigned_to' here later if you implement it
-        ]
-        
-        widgets = {
-            'notes': forms.Textarea(attrs={'rows': 4, 'placeholder': 'Additional notes about the lead...'}),
-            'status': forms.Select(attrs={'class': 'form-select'}),
-            'priority': forms.Select(attrs={'class': 'form-select'}),
-            'source': forms.Select(attrs={'class': 'form-select'}),
-        }
-    
+        fields = '__all__'
+        exclude = ['created_by', 'created_at', 'updated_at', 'notes']
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Optional: Make some fields required or add placeholders
-        self.fields['name'].widget.attrs.update({'placeholder': 'Full name of the lead'})
-        self.fields['email'].widget.attrs.update({'placeholder': 'Email address'})
-        self.fields['phone'].widget.attrs.update({'placeholder': 'Phone number'})
-        self.fields['company'].widget.attrs.update({'placeholder': 'Company name'})
+        
+        # Explicit dropdown assignments
+        self.fields['sex'].widget = forms.Select(choices=[
+            ('', 'Select Gender'),
+            ('male', 'Male'),
+            ('female', 'Female'),
+            ('other', 'Other'),
+        ])
+        
+        # Apply bulk classes to text/select fields via the mixin
+        self.apply_professional_styles()
 
-class DealForm(forms.ModelForm):
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        extra_info = []
+        fields_to_capture = [
+            ('quantity', 'Quantity'), ('total', 'Total'), 
+            ('russian_post_track', 'Russian Post Track'), ('delivery_time', 'Delivery Time'),
+            ('index', 'Index'), ('region', 'Region'), ('city', 'City'), 
+            ('district', 'District'), ('address', 'Address'), ('sex', 'Sex'), 
+            ('age', 'Age'), ('comment', 'Comment'), 
+            ('cancellation_reason', 'Cancellation Reason'), 
+            ('return_reason', 'Return Reason'), ('spam_reason', 'Spam Reason'),
+            ('additional_field_14', 'Additional Field #14'),
+        ]
+
+        for field_name, label in fields_to_capture:
+            value = self.cleaned_data.get(field_name)
+            if value not in (None, '', [], {}):
+                extra_info.append(f"{label}: {value}")
+
+        if extra_info:
+            metadata = "\n".join(extra_info)
+            header = "--- Order Metadata ---"
+
+            if instance.notes and header in instance.notes:
+                main_notes = instance.notes.split(header)[0].strip()
+                instance.notes = f"{main_notes}\n\n{header}\n{metadata}" if main_notes else f"{header}\n{metadata}"
+            else:
+                separator = "\n\n" if instance.notes else ""
+                instance.notes = f"{instance.notes}{separator}{header}\n{metadata}"
+
+        if commit:
+            instance.save()
+        return instance
+
+
+class DealForm(forms.ModelForm, ProfessionalFormMixin):
     class Meta:
         model = Deal
         fields = [
@@ -99,33 +142,51 @@ class DealForm(forms.ModelForm):
         ]
         widgets = {
             'expected_close_date': forms.DateInput(attrs={'type': 'date'}),
-            'notes': forms.Textarea(attrs={'rows': 4}),
         }
 
-class ClientForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.apply_professional_styles()
+
+
+class ClientForm(forms.ModelForm, ProfessionalFormMixin):
     class Meta:
         model = Client
         fields = ['name', 'email', 'phone', 'company', 'address']
 
-class InteractionForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.apply_professional_styles()
+
+
+class InteractionForm(forms.ModelForm, ProfessionalFormMixin):
     class Meta:
         model = Interaction
         fields = ['lead', 'interaction_type', 'notes']
-        widgets = {
-            'notes': forms.Textarea(attrs={'rows': 4}),
-        }
 
-class TaskForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.apply_professional_styles()
+
+
+class TaskForm(forms.ModelForm, ProfessionalFormMixin):
     class Meta:
         model = Task
         fields = ['title', 'description', 'due_date', 'priority', 'related_lead']
         widgets = {
             'due_date': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
-            'description': forms.Textarea(attrs={'rows': 3}),
         }
 
-class UserProfileForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.apply_professional_styles()
+
+
+class UserProfileForm(forms.ModelForm, ProfessionalFormMixin):
     class Meta:
-        from django.contrib.auth.models import User
         model = get_user_model()
         fields = ['first_name', 'last_name', 'email']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.apply_professional_styles()

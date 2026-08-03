@@ -1,0 +1,40 @@
+{% extends 'website/base.html' %}
+
+{% block title %}{{ product.title }} | Lead Arena{% endblock %}
+
+{% block content %}
+<div class="page-banner" style="max-width:900px; margin:0 auto;">
+    <h1>{{ product.title }}</h1>
+    <p style="color:#64748b;">{{ product.short_description }}</p>
+
+    <h3>Benefits</h3>
+    <div>{{ product.benefits|linebreaks }}</div>
+
+    <h3>Ingredients</h3>
+    <div>{{ product.ingredients|linebreaks }}</div>
+
+    <h3>Dosage</h3>
+    <div>{{ product.dosage|linebreaks }}</div>
+
+    <h3>Price</h3>
+    <div><strong>${{ product.price }}</strong></div>
+
+    <div style="margin-top:1rem; display:flex; gap:0.5rem;">
+        <a href="{% url 'website:order_create' %}" class="btn btn-primary">Order Now</a>
+        <a href="{% url 'website:callback' %}" class="btn btn-outline">Talk to Consultant</a>
+    </div>
+
+    <h3 style="margin-top:1.25rem;">Customer Reviews</h3>
+    {% for r in product.reviews.all %}
+        <div style="border-top:1px solid #f1f5f9; padding:0.75rem 0;">
+            <strong>{{ r.author_name }}</strong> — ★{{ r.rating }}
+            <div style="color:#64748b;">{{ r.text }}</div>
+        </div>
+    {% empty %}
+        <p>No reviews yet.</p>
+    {% endfor %}
+
+    <h3>FAQs</h3>
+    <div>{{ product.faqs|linebreaks }}</div>
+</div>
+{% endblock %}
