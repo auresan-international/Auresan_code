@@ -198,6 +198,113 @@
     </div>
 </div>
 
+<!-- Pending Website Leads Section -->
+<div class="table-container-card" style="margin-bottom: 2rem;">
+    <div style="border-bottom: 1px solid var(--border-color); padding: 1rem 1.5rem; display: flex; align-items: center; justify-content: space-between;">
+        <h5 style="margin:0; font-size: 1.05rem; font-weight: 600; color: var(--text-main);">
+            <i class="fas fa-clock me-2" style="color: #f59e0b;"></i> Pending Website Leads
+        </h5>
+        <span class="badge" style="background: #fef3c7; color: #92400e; padding: 0.35rem 0.75rem; border-radius: 6px; font-size: 0.8rem; font-weight: 600;">
+            Total: {{ pending_website_leads|length }}
+        </span>
+    </div>
+    <div style="overflow-x: auto;">
+        <table class="custom-dashboard-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Phone</th>
+                    <th>Email</th>
+                    <th>Product</th>
+                    <th>Qty</th>
+                    <th>Location</th>
+                    <th>Added</th>
+                    <th>Call Outcome</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for lead in pending_website_leads %}
+                <tr id="pending-lead-row-{{ lead.id }}">
+                    <td><strong>{{ lead.name }}</strong></td>
+                    <td style="font-family: monospace; font-weight: 600; color: #1e293b;">{{ lead.phone }}</td>
+                    <td style="color: var(--text-muted);">{{ lead.email|default:"—" }}</td>
+                    <td style="color: var(--text-muted);">{{ lead.company|default:"—" }}</td>
+                    <td>{{ lead.quantity|default:"—" }}</td>
+                    <td>
+                        {% if lead.latitude and lead.longitude %}
+                        <a href="https://www.google.com/maps?q={{ lead.latitude }},{{ lead.longitude }}" target="_blank" style="color: var(--primary-blue); text-decoration: none; font-size: 0.85rem;">
+                            <i class="fas fa-map-marker-alt"></i> View
+                        </a>
+                        {% else %}
+                        <span style="color: var(--text-muted);">—</span>
+                        {% endif %}
+                    </td>
+                    <td style="color: var(--text-muted); font-size: 0.85rem;">{{ lead.created_at|naturaltime }}</td>
+                    <td>
+                        <div style="display: flex; gap: 0.25rem; flex-wrap: wrap; align-items: center;">
+                            <form 
+                                hx-post="{% url 'update_lead_call_outcome' lead_id=lead.id %}" 
+                                hx-target="#pending-lead-row-{{ lead.id }}" 
+                                hx-swap="outerHTML"
+                            >
+                                {% csrf_token %}
+                                <input type="hidden" name="call_outcome" value="success">
+                                <input type="hidden" name="call_outcome_notes" value="">
+                                <button type="submit" class="btn btn-sm btn-success" title="Confirmed">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                            </form>
+                            <form 
+                                hx-post="{% url 'update_lead_call_outcome' lead_id=lead.id %}" 
+                                hx-target="#pending-lead-row-{{ lead.id }}" 
+                                hx-swap="outerHTML"
+                            >
+                                {% csrf_token %}
+                                <input type="hidden" name="call_outcome" value="unreachable">
+                                <input type="hidden" name="call_outcome_notes" value="Unreachable">
+                                <button type="submit" class="btn btn-sm btn-warning" title="Unreachable">
+                                    <i class="fas fa-phone-slash"></i>
+                                </button>
+                            </form>
+                            <form 
+                                hx-post="{% url 'update_lead_call_outcome' lead_id=lead.id %}" 
+                                hx-target="#pending-lead-row-{{ lead.id }}" 
+                                hx-swap="outerHTML"
+                            >
+                                {% csrf_token %}
+                                <input type="hidden" name="call_outcome" value="failed">
+                                <input type="hidden" name="call_outcome_notes" value="Failed">
+                                <button type="submit" class="btn btn-sm btn-danger" title="Failed">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </form>
+                            <form 
+                                hx-post="{% url 'update_lead_call_outcome' lead_id=lead.id %}" 
+                                hx-target="#pending-lead-row-{{ lead.id }}" 
+                                hx-swap="outerHTML"
+                            >
+                                {% csrf_token %}
+                                <input type="hidden" name="call_outcome" value="not_answered">
+                                <input type="hidden" name="call_outcome_notes" value="Not Answered">
+                                <button type="submit" class="btn btn-sm btn-secondary" title="Not Answered">
+                                    <i class="fas fa-phone-volume"></i>
+                                </button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" style="text-align: center; padding: 2rem 1.5rem; color: var(--text-muted);">
+                        <span style="font-weight: 500; display: block; color: var(--text-main);">No pending website leads.</span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
 <!-- Master Leads Registry Table Container -->
 <div class="table-container-card">
     <div style="border-bottom: 1px solid var(--border-color); padding: 1rem 1.5rem; display: flex; align-items: center; justify-content: space-between;">

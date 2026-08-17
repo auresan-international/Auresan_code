@@ -21,12 +21,17 @@ urlpatterns = [
     path('staff/create-lead/', views.create_lead_view, name='create_lead'),
     path('staff/my-conversations/', views.my_conversations_view, name='my_conversations'),
     path('staff/charts/', views.staff_charts_view, name='staff_charts'),
-    
+    path('staff/call-requests/', views.call_requests_view, name='call_requests'),
+    path('staff/start-conversation/', views.start_conversation_view, name='start_conversation'),
+    path('leads/<int:lead_id>/update-call-outcome/', views.update_lead_call_outcome, name='update_lead_call_outcome'),
+    path('leads/<int:lead_id>/send-sms/', views.send_sms_view, name='send_sms'),
+    path('leads/<int:lead_id>/send-email/', views.send_email_view, name='send_email'),
+
     # Automated Dialer
     path('staff/start-auto-dial/', views.start_auto_dial, name='start_auto_dial'),
     path('leads/<int:lead_id>/call/', views.call_lead, name='call_lead'),
 
-# Admin Links
+    # Admin Links
     # Generic Lead Management (example)
     path('leads/', views.LeadListView.as_view(), name='leads'),
     path('leads/create/', views.LeadCreateView.as_view(), name='lead_create'),

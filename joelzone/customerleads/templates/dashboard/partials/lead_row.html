@@ -1,0 +1,37 @@
+{% load humanize %}
+<tr id="pending-lead-row-{{ lead.id }}">
+    <td><strong>{{ lead.name }}</strong></td>
+    <td style="font-family: monospace; font-weight: 600; color: #1e293b;">{{ lead.phone }}</td>
+    <td style="color: var(--text-muted);">{{ lead.email|default:"—" }}</td>
+    <td style="color: var(--text-muted);">{{ lead.company|default:"—" }}</td>
+    <td>{{ lead.quantity|default:"—" }}</td>
+    <td>
+        {% if lead.latitude and lead.longitude %}
+        <a href="https://www.google.com/maps?q={{ lead.latitude }},{{ lead.longitude }}" target="_blank" style="color: var(--primary-blue); text-decoration: none; font-size: 0.85rem;">
+            <i class="fas fa-map-marker-alt"></i> View
+        </a>
+        {% else %}
+        <span style="color: var(--text-muted);">—</span>
+        {% endif %}
+    </td>
+    <td style="color: var(--text-muted); font-size: 0.85rem;">{{ lead.created_at|naturaltime }}</td>
+    <td>
+        {% if lead.call_outcome %}
+        <span style="display: inline-flex; align-items: center; gap: 0.35rem; font-size: 0.8rem; font-weight: 600; padding: 0.2rem 0.5rem; border-radius: 6px;
+            {% if lead.call_outcome == 'success' %}background: #ecfdf5; color: #047857;
+            {% elif lead.call_outcome == 'unreachable' %}background: #fff7ed; color: #c2410c;
+            {% elif lead.call_outcome == 'failed' %}background: #fff1f2; color: #b91c1c;
+            {% elif lead.call_outcome == 'not_answered' %}background: #f8fafc; color: #475569;
+            {% endif %}">
+            <span style="width: 6px; height: 6px; border-radius: 50%; 
+                background: {% if lead.call_outcome == 'success' %}#10b981{% elif lead.call_outcome == 'unreachable' %}#f97316{% elif lead.call_outcome == 'failed' %}#ef4444{% elif lead.call_outcome == 'not_answered' %}#64748b{% endif %};"></span>
+            {{ lead.get_call_outcome_display }}
+        </span>
+        {% if lead.call_outcome_notes %}
+        <div style="font-size: 0.75rem; color: var(--text-muted); margin-top: 0.25rem;">{{ lead.call_outcome_notes }}</div>
+        {% endif %}
+        {% else %}
+        <span style="color: var(--text-muted); font-size: 0.85rem;">Pending</span>
+        {% endif %}
+    </td>
+</tr>

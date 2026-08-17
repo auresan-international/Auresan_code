@@ -355,8 +355,20 @@ function resumeSystem() {
         
 
                 <li>
-                    <a href="{% url 'my_conversations' %}" class="menu-item {% if active_tab == 'conversations' %}active{% endif %}"
+                    <a href="{% url 'call_requests' %}" class="menu-item {% if active_tab == 'call_requests' %}active{% endif %}"
+                       hx-get="{% url 'call_requests' %}"
+                       hx-target="#main-content"
+                       hx-swap="innerHTML"
+                       hx-push-url="true"
+                       hx-indicator=".htmx-indicator"
+                       hx-on::after-request="document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active')); this.classList.add('active')"
+                       >
+                         <i class="fas fa-phone-volume"></i> Call Requests
+                    </a>
+                </li>
 
+                <li>
+                    <a href="{% url 'my_conversations' %}" class="menu-item {% if active_tab == 'conversations' %}active{% endif %}"
                        hx-get="{% url 'my_conversations' %}"
                        hx-target="#main-content"
                        hx-swap="innerHTML"
@@ -364,7 +376,7 @@ function resumeSystem() {
                        hx-indicator=".htmx-indicator"
                        hx-on::after-request="document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active')); this.classList.add('active')"
                        >
-                        <i class="fas fa-comment-dots"></i> My conversations
+                         <i class="fas fa-comment-dots"></i> My conversations
                     </a>
                 </li>
 

@@ -95,6 +95,29 @@ class LeadForm(forms.ModelForm, ProfessionalFormMixin):
             ('other', 'Other'),
         ])
         
+        self.fields['status'].widget = forms.Select(choices=[
+            ('pending', 'Pending'),
+            ('new', 'New'),
+            ('contacted', 'Contacted'),
+            ('qualified', 'Qualified'),
+            ('proposal', 'Proposal Sent'),
+            ('negotiation', 'In Negotiation'),
+            ('closed', 'Closed/Won'),
+            ('lost', 'Closed/Lost'),
+            ('confirmed', 'Confirmed'),
+            ('unreachable', 'Unreachable'),
+            ('failed', 'Failed'),
+            ('not_answered', 'Not Answered'),
+        ])
+        
+        self.fields['call_outcome'].widget = forms.Select(choices=[
+            ('', 'Select Call Outcome'),
+            ('success', 'Confirmed'),
+            ('unreachable', 'Unreachable'),
+            ('failed', 'Failed'),
+            ('not_answered', 'Not Answered'),
+        ])
+        
         # Apply bulk classes to text/select fields via the mixin
         self.apply_professional_styles()
 

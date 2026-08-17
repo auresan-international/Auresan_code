@@ -41,6 +41,7 @@ class CustomUser(AbstractUser):
 
 class Lead(models.Model):
     STATUS_CHOICES = [
+        ('pending', 'Pending'),
         ('new', 'New'),
         ('contacted', 'Contacted'),
         ('qualified', 'Qualified'),
@@ -48,6 +49,10 @@ class Lead(models.Model):
         ('negotiation', 'In Negotiation'),
         ('closed', 'Closed/Won'),
         ('lost', 'Closed/Lost'),
+        ('confirmed', 'Confirmed'),
+        ('unreachable', 'Unreachable'),
+        ('failed', 'Failed'),
+        ('not_answered', 'Not Answered'),
     ]
 
     PRIORITY_CHOICES = [
@@ -75,6 +80,20 @@ class Lead(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='new')
     priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='medium')
     source = models.CharField(max_length=20, choices=SOURCE_CHOICES, default='website')
+
+    # Location
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
+
+    # Call Outcome
+    CALL_OUTCOME_CHOICES = [
+        ('success', 'Confirmed'),
+        ('unreachable', 'Unreachable'),
+        ('failed', 'Failed'),
+        ('not_answered', 'Not Answered'),
+    ]
+    call_outcome = models.CharField(max_length=20, choices=CALL_OUTCOME_CHOICES, null=True, blank=True)
+    call_outcome_notes = models.TextField(blank=True)
 
     # === Order / Delivery Fields ===
     quantity = models.PositiveIntegerField(null=True, blank=True)
@@ -123,6 +142,7 @@ class Lead(models.Model):
 
     def get_status_color(self):
         return {
+            'pending': 'warning',
             'new': 'primary',
             'contacted': 'info',
             'qualified': 'success',
@@ -130,6 +150,10 @@ class Lead(models.Model):
             'negotiation': 'primary',
             'closed': 'success',
             'lost': 'danger',
+            'confirmed': 'success',
+            'unreachable': 'warning',
+            'failed': 'danger',
+            'not_answered': 'secondary',
         }.get(self.status, 'secondary')
 
 class Deal(models.Model):
@@ -263,4 +287,5 @@ class CallLog(models.Model):
     status = models.CharField(max_length=50)
     direction = models.CharField(max_length=20)
     duration = models.IntegerField(default=0)
+    recording_url = models.URLField(blank=True)
     created_at = models.DateTimeField(auto_now_add=True)

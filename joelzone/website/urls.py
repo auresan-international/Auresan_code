@@ -12,6 +12,7 @@ urlpatterns = [
     path('callback/thanks/', lambda r: render(r, 'website/callback_thanks.html'), name='callback_thanks'),
     path('order/', views.order_create, name='order_create'),
     path('order/thanks/', lambda r: render(r, 'website/order_thanks.html'), name='order_thanks'),
+    path('website-order-submit/', views.website_order_submit, name='website_order_submit'),
     path('contact/', views.contact, name='contact'),
     path('about/', views.about, name='about'),
     path('faqs/', views.faqs, name='faqs'),

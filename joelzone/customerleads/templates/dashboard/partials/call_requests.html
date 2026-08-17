@@ -1,0 +1,48 @@
+{% load humanize %}
+<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
+    <h1 style="font-size: 1.6rem; font-weight: 600; margin: 0;">Call Requests</h1>
+</div>
+
+<div class="table-container-card">
+    <div style="overflow-x: auto;">
+        <table class="custom-dashboard-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Phone</th>
+                    <th>District</th>
+                    <th>Interest</th>
+                    <th>Best Time</th>
+                    <th>Message</th>
+                    <th>Requested</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cb in call_requests %}
+                <tr>
+                    <td><strong>{{ cb.full_name }}</strong></td>
+                    <td style="font-family: monospace; font-weight: 600; color: #1e293b;">{{ cb.phone_number }}</td>
+                    <td style="color: var(--text-muted);">{{ cb.district|default:"—" }}</td>
+                    <td style="color: var(--text-muted);">{{ cb.interest|default:"—" }}</td>
+                    <td style="color: var(--text-muted);">{{ cb.best_time|default:"—" }}</td>
+                    <td style="color: var(--text-muted); max-width: 250px;">{{ cb.message|truncatechars:80|default:"—" }}</td>
+                    <td style="color: var(--text-muted); font-size: 0.85rem;">{{ cb.created_at|naturaltime }}</td>
+                    <td>
+                        <a href="tel:{{ cb.phone_number }}" class="btn btn-sm btn-primary" title="Call">
+                            <i class="fas fa-phone"></i>
+                        </a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" style="text-align: center; padding: 4rem 1.5rem; color: var(--text-muted);">
+                        <i class="fas fa-folder-open" style="font-size: 2rem; display: block; margin-bottom: 0.75rem; color: #94a3b8; opacity: 0.6;"></i>
+                        <span style="font-weight: 500; display: block; color: var(--text-main);">No call requests yet.</span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>

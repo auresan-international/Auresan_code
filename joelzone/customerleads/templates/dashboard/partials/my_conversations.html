@@ -1,22 +1,119 @@
+{% load humanize %}
 <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
-    <h1 style="font-size: 1.6rem; font-weight: 600; margin: 0;">My Recent Conversations</h1>
+    <h1 style="font-size: 1.6rem; font-weight: 600; margin: 0;">My Conversations</h1>
 </div>
 
-<div class="metric-card" style="text-align: left; padding: 0;">
-    <ul style="list-style: none;">
-        {% for convo in conversations %}
-            <li style="padding: 1rem 1.5rem; border-bottom: 1px solid var(--border);">
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <strong style="color: var(--primary);">{{ convo.lead.name }}</strong>
-                    <span style="font-size: 0.85rem; color: var(--text-light);">{{ convo.interaction_date|date:"M d, Y, P" }}</span>
+<!-- Start New Conversation Form -->
+<div class="metric-card" style="margin-bottom: 2rem; padding: 1.5rem;">
+    <h5 style="font-weight: 600; margin-bottom: 1rem;">Start New Conversation</h5>
+    <form hx-post="{% url 'start_conversation' %}" hx-target="#conversations-container" hx-swap="innerHTML" hx-push-url="false">
+        {% csrf_token %}
+        <div class="row g-3">
+            <div class="col-md-4">
+                <label for="id_lead" class="form-label">Lead</label>
+                <select class="form-select" id="id_lead" name="lead_id" required>
+                    <option value="">Select a lead</option>
+                    {% for lead in leads %}
+                    <option value="{{ lead.id }}">{{ lead.name }} - {{ lead.phone }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+                <div class="col-md-3">
+                <label for="id_type" class="form-label">Type</label>
+                <select class="form-select" id="id_type" name="interaction_type">
+                    {% for value, label in interaction_types %}
+                    <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-5">
+                <label for="id_notes" class="form-label">Notes</label>
+                <input type="text" class="form-control" id="id_notes" name="notes" placeholder="Enter conversation notes" required>
+            </div>
+            <div class="col-12">
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-plus me-1"></i> Start Conversation
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<div id="conversations-container">
+    {% if conversations or call_logs %}
+    <div class="metric-card" style="text-align: left; padding: 0;">
+        <ul style="list-style: none;">
+            {% for convo in conversations %}
+            <li style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border);">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+                    <div style="flex: 1; min-width: 200px;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                            <strong style="color: var(--primary); font-size: 1.05rem;">{{ convo.lead.name }}</strong>
+                            <span style="background: #e0e7ff; color: var(--primary); padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">{{ convo.get_interaction_type_display }}</span>
+                        </div>
+                        <p style="margin: 0; color: var(--text-light); font-size: 0.95rem;">{{ convo.notes|truncatewords:25 }}</p>
+                        <p style="margin: 0.5rem 0 0; font-size: 0.8rem; color: #94a3b8;">{{ convo.interaction_date|date:"M d, Y, P" }}</p>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+                        <form hx-post="{% url 'send_sms' lead_id=convo.lead.id %}" hx-target="#sms-result-{{ convo.lead.id }}-{{ forloop.counter }}" hx-swap="innerHTML" style="display: flex; gap: 0.25rem; flex-wrap: wrap; align-items: center;">
+                            {% csrf_token %}
+                            <input type="text" name="message" placeholder="Send SMS..." class="form-control form-control-sm" style="width: auto; display: inline-block;" required>
+                            <button type="submit" class="btn btn-sm btn-primary">SMS</button>
+                        </form>
+                        <span id="sms-result-{{ convo.lead.id }}-{{ forloop.counter }}"></span>
+                        <form hx-post="{% url 'send_email' lead_id=convo.lead.id %}" hx-target="#email-result-{{ convo.lead.id }}-{{ forloop.counter }}" hx-swap="innerHTML" style="display: flex; gap: 0.25rem; flex-wrap: wrap; align-items: center;">
+                            {% csrf_token %}
+                            <input type="text" name="subject" placeholder="Subject" class="form-control form-control-sm" style="width: auto; display: inline-block;" required>
+                            <input type="text" name="message" placeholder="Email message..." class="form-control form-control-sm" style="width: auto; display: inline-block;" required>
+                            <button type="submit" class="btn btn-sm btn-success">Email</button>
+                        </form>
+                        <span id="email-result-{{ convo.lead.id }}-{{ forloop.counter }}"></span>
+                    </div>
                 </div>
-                <p style="margin: 0.5rem 0 0; color: var(--text-light);">
-                    <span style="background: #e0e7ff; color: var(--primary); padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.8rem; font-weight: 500;">{{ convo.get_interaction_type_display }}</span>
-                    {{ convo.notes|truncatewords:20 }}
-                </p>
             </li>
-        {% empty %}
-            <li style="padding: 2rem; text-align: center; color: var(--text-light);">You have no logged conversations.</li>
-        {% endfor %}
-    </ul>
+            {% empty %}
+            {% endfor %}
+            {% for call in call_logs %}
+            <li style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border);">
+                <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
+                    <div style="flex: 1; min-width: 200px;">
+                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
+                            <strong style="color: var(--primary); font-size: 1.05rem;">Call with {{ call.lead.name }}</strong>
+                            <span style="background: #fef3c7; color: #92400e; padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">{{ call.direction|title }}</span>
+                        </div>
+                        <p style="margin: 0; color: var(--text-light); font-size: 0.95rem;">
+                            Status: {{ call.status|title }} | Duration: {{ call.duration }}s
+                            {% if call.recording_url %}
+                            | <a href="{{ call.recording_url }}" target="_blank" style="color: var(--primary);"><i class="fas fa-play-circle"></i> Recording</a>
+                            {% endif %}
+                        </p>
+                        <p style="margin: 0.5rem 0 0; font-size: 0.8rem; color: #94a3b8;">{{ call.created_at|date:"M d, Y, P" }}</p>
+                    </div>
+                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+                        <form hx-post="{% url 'send_sms' lead_id=call.lead.id %}" hx-target="#sms-result-call-{{ call.id }}" hx-swap="innerHTML" style="display: flex; gap: 0.25rem; flex-wrap: wrap; align-items: center;">
+                            {% csrf_token %}
+                            <input type="text" name="message" placeholder="Send SMS..." class="form-control form-control-sm" style="width: auto; display: inline-block;" required>
+                            <button type="submit" class="btn btn-sm btn-primary">SMS</button>
+                        </form>
+                        <span id="sms-result-call-{{ call.id }}"></span>
+                        <form hx-post="{% url 'send_email' lead_id=call.lead.id %}" hx-target="#email-result-call-{{ call.id }}" hx-swap="innerHTML" style="display: flex; gap: 0.25rem; flex-wrap: wrap; align-items: center;">
+                            {% csrf_token %}
+                            <input type="text" name="subject" placeholder="Subject" class="form-control form-control-sm" style="width: auto; display: inline-block;" required>
+                            <input type="text" name="message" placeholder="Email message..." class="form-control form-control-sm" style="width: auto; display: inline-block;" required>
+                            <button type="submit" class="btn btn-sm btn-success">Email</button>
+                        </form>
+                        <span id="email-result-call-{{ call.id }}"></span>
+                    </div>
+                </div>
+            </li>
+            {% empty %}
+            {% endfor %}
+        </ul>
+    </div>
+    {% else %}
+    <div class="metric-card text-center py-5">
+        <i class="fas fa-comments" style="font-size: 3rem; color: #cbd5e1; margin-bottom: 1rem;"></i>
+        <p style="color: var(--text-muted);">You have no conversations yet.</p>
+    </div>
+    {% endif %}
 </div>

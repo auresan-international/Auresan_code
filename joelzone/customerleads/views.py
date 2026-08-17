@@ -8,17 +8,20 @@ from django.db.models import Sum, Count, Q, Avg
 from django.utils import timezone
 from datetime import timedelta
 from django.core.paginator import Paginator
+from django.core.mail import EmailMessage
 from django.urls import reverse, reverse_lazy
 from django.contrib import messages
 from django.contrib.auth import get_user_model
 from django.contrib.auth.views import LoginView, LogoutView
 from django.contrib.messages.views import SuccessMessageMixin
 from .models import CallLog, Lead, Client, Interaction, Task, UserProfile, Deal
+from website.models import CallbackRequest
 from .forms import CustomUserCreationForm, LeadForm, ClientForm, InteractionForm, TaskForm, DealForm
 import africastalking
 from django.conf import settings
 from django.contrib.auth.models import User
 from django.contrib.auth.forms import UserChangeForm
+from django.views.decorators.http import require_POST
 User = get_user_model()
 from .utils import voice
 from django.db import transaction
@@ -796,57 +799,39 @@ from decimal import Decimal
 
 @login_required
 def operator_dashboard(request):
-    # 1. Get current time context
     now = timezone.now()
     period = request.GET.get('period', 'today')
 
-    # 2. Base querysets
-    # For the table: Always fetch EVERY SINGLE lead across your whole system
     all_leads_table = Lead.objects.all().order_by('-created_at')
-    
-    # For metrics: We filter this queryset down based on the active period tab
     metrics_query = Lead.objects.all()
 
-    # 3. Apply Date Adjustments for Metrics Filter
     if period == 'today':
         start_date = now.replace(hour=0, minute=0, second=0, microsecond=0)
         metrics_query = metrics_query.filter(created_at__gte=start_date)
-        
     elif period == '7days':
         start_date = now - timedelta(days=7)
         metrics_query = metrics_query.filter(created_at__gte=start_date)
-        
     elif period == 'this_month':
         start_date = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         metrics_query = metrics_query.filter(created_at__gte=start_date)
-        
     elif period == 'last_month':
-        # Calculate the first and last day of previous month
         first_of_this_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
         last_day_of_last_month = first_of_this_month - timedelta(seconds=1)
         first_day_of_last_month = last_day_of_last_month.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
-        
         metrics_query = metrics_query.filter(
             created_at__gte=first_day_of_last_month,
             created_at__lte=last_day_of_last_month
         )
 
-# 4. Aggregate Metric Calculations (Optimized to hit DB once)
     aggregates = metrics_query.aggregate(
-        # CHANGED: renamed from 'total' to 'total_count' to avoid field name collision
         total_count=Count('id'),
-        
-        # Counts based on your custom Lead status tags
         dialing_cnt=Count('id', filter=Q(status='dialing')),
-        approved_cnt=Count('id', filter=Q(status='approved')),  
+        approved_cnt=Count('id', filter=Q(status='approved')),
         cancelled_cnt=Count('id', filter=Q(status='cancelled')),
         recall_cnt=Count('id', filter=Q(status='recall')),
-        
-        # Financial analytics - now safely points to your model's actual 'total' field
-        avg_check=Avg('total', filter=Q(total__gt=0))  
+        avg_check=Avg('total', filter=Q(total__gt=0))
     )
 
-    # Extract aggregated data safely with modified key name
     total_leads = aggregates['total_count'] or 0
     dialing = aggregates['dialing_cnt'] or 0
     qualified_count = aggregates['approved_cnt'] or 0
@@ -854,28 +839,22 @@ def operator_dashboard(request):
     recalls = aggregates['recall_cnt'] or 0
     avg_check_val = aggregates['avg_check'] or 0.0000
 
-    # 5. Calculate Percentages for Dashboard Layouts
     clean_approve = "0%"
     cancellations = "0%"
     if total_leads > 0:
         clean_approve = f"{(qualified_count / total_leads) * 100:.1f}%"
         cancellations = f"{(lost_count / total_leads) * 100:.1f}%"
 
-    # Mock placeholders for business logic aggregates not strictly mapping to a Lead field
-    # Replace these formulas with your specific phone-system metrics or profile models if tracked
     leads_per_hour = round(total_leads / 8, 1) if period == 'today' else round(total_leads / 40, 1)
-    buyout = "0%" if total_leads == 0 else f"{(qualified_count / total_leads) * 92:.1f}%" 
-    bonuses = f"{qualified_count * 5.50:.2f} c.u."  # Base structural multiplier example
-
-    # 6. Format Financial Currency Checks
+    buyout = "0%" if total_leads == 0 else f"{(qualified_count / total_leads) * 92:.1f}%"
+    bonuses = f"{qualified_count * 5.50:.2f} c.u."
     average_check = f"${avg_check_val:,.2f}"
 
-    # 7. Construct Full UI Template Context Map
+    pending_website_leads = Lead.objects.filter(status='pending', source='website').order_by('-created_at')[:50]
+
     context = {
-        # Master table contains EVERYTHING
         'leads': all_leads_table,
-        
-        # Control & Card tracking filters
+        'pending_website_leads': pending_website_leads,
         'period': period,
         'total_leads': total_leads,
         'dialing': dialing,
@@ -894,7 +873,6 @@ def operator_dashboard(request):
         'conversation_items': build_operator_conversations(request),
     }
 
-    # 8. Clean HTMX Swapping Engine routing
     if request.htmx:
         return render(request, 'dashboard/partials/dashboard.html', context)
     return render(request, 'dashboard/staff.html', context)
@@ -988,3 +966,184 @@ def staff_charts_view(request):
         return render(request, 'dashboard/partials/charts.html', context)
 
     return render(request, 'dashboard/staff.html', context)
+
+
+@login_required
+def call_requests_view(request):
+    call_requests = CallbackRequest.objects.all().order_by('-created_at')
+    context = {
+        'active_tab': 'call_requests',
+        'content_template': 'dashboard/partials/call_requests.html',
+        'call_requests': call_requests,
+    }
+    if request.htmx:
+        return render(request, 'dashboard/partials/call_requests.html', context)
+    return render(request, 'dashboard/staff.html', context)
+
+
+@login_required
+def my_conversations_view(request):
+    conversations = Interaction.objects.filter(
+        created_by=request.user
+    ).select_related('lead').order_by('-interaction_date')[:50]
+
+    call_logs = CallLog.objects.filter(
+        lead__created_by=request.user
+    ).select_related('lead').order_by('-created_at')[:50]
+
+    context = {
+        'conversations': conversations,
+        'call_logs': call_logs,
+        'leads': Lead.objects.all().order_by('name')[:100],
+        'interaction_types': Interaction.INTERACTION_TYPES,
+        'active_tab': 'conversations',
+        'content_template': 'dashboard/partials/my_conversations.html',
+    }
+
+    if request.htmx:
+        return render(request, 'dashboard/partials/my_conversations.html', context)
+
+    return render(request, 'dashboard/staff.html', context)
+
+
+@login_required
+@require_POST
+def start_conversation_view(request):
+    lead_id = request.POST.get('lead_id')
+    notes = request.POST.get('notes', '').strip()
+    interaction_type = request.POST.get('interaction_type', 'other')
+
+    if not lead_id:
+        if request.htmx:
+            return HttpResponse('<div class="alert alert-danger">Please select a lead.</div>')
+        messages.error(request, 'Please select a lead.')
+        return redirect('my_conversations')
+
+    try:
+        lead = Lead.objects.get(id=lead_id)
+    except Lead.DoesNotExist:
+        if request.htmx:
+            return HttpResponse('<div class="alert alert-danger">Lead not found.</div>')
+        messages.error(request, 'Lead not found.')
+        return redirect('my_conversations')
+
+    if not notes:
+        if request.htmx:
+            return HttpResponse('<div class="alert alert-danger">Please enter conversation notes.</div>')
+        messages.error(request, 'Please enter conversation notes.')
+        return redirect('my_conversations')
+
+    try:
+        Interaction.objects.create(
+            lead=lead,
+            interaction_type=interaction_type,
+            notes=notes,
+            created_by=request.user,
+        )
+        if request.htmx:
+            conversations = Interaction.objects.filter(
+                created_by=request.user
+            ).select_related('lead').order_by('-interaction_date')[:50]
+            call_logs = CallLog.objects.filter(
+                lead__created_by=request.user
+            ).select_related('lead').order_by('-created_at')[:50]
+            return render(request, 'dashboard/partials/my_conversations.html', {
+                'conversations': conversations,
+                'call_logs': call_logs,
+                'leads': Lead.objects.all().order_by('name')[:100],
+                'interaction_types': Interaction.INTERACTION_TYPES,
+                'active_tab': 'conversations',
+                'content_template': 'dashboard/partials/my_conversations.html',
+            })
+        messages.success(request, 'Conversation started successfully!')
+    except Exception as e:
+        if request.htmx:
+            return HttpResponse(f'<div class="alert alert-danger">Error: {str(e)}</div>')
+        messages.error(request, f'Error: {str(e)}')
+    return redirect('my_conversations')
+
+
+@login_required
+@require_POST
+def send_sms_view(request, lead_id):
+    lead = get_object_or_404(Lead, id=lead_id)
+    message = request.POST.get('message', '').strip()
+    if not message:
+        if request.htmx:
+            return HttpResponse('<div class="alert alert-danger">Message cannot be empty.</div>')
+        messages.error(request, 'Message cannot be empty.')
+        return redirect('my_conversations')
+
+    try:
+        sms = africastalking.SMS
+        response = sms.send(message, [format_phone_to_e164(lead.phone)])
+        if request.htmx:
+            return HttpResponse(f'<div class="alert alert-success">SMS sent to {lead.name}.</div>')
+        messages.success(request, f'SMS sent to {lead.name}.')
+    except Exception as e:
+        if request.htmx:
+            return HttpResponse(f'<div class="alert alert-danger">SMS failed: {str(e)}</div>')
+        messages.error(request, f'SMS failed: {str(e)}')
+    return redirect('my_conversations')
+
+
+@login_required
+@require_POST
+def send_email_view(request, lead_id):
+    lead = get_object_or_404(Lead, id=lead_id)
+    subject = request.POST.get('subject', '').strip()
+    message = request.POST.get('message', '').strip()
+    if not subject or not message:
+        if request.htmx:
+            return HttpResponse('<div class="alert alert-danger">Subject and message are required.</div>')
+        messages.error(request, 'Subject and message are required.')
+        return redirect('my_conversations')
+
+    try:
+        mail = EmailMessage(
+            subject,
+            message,
+            settings.DEFAULT_FROM_EMAIL,
+            [lead.email] if lead.email else [],
+            reply_to=[settings.DEFAULT_FROM_EMAIL],
+        )
+        mail.send()
+        if request.htmx:
+            return HttpResponse(f'<div class="alert alert-success">Email sent to {lead.name}.</div>')
+        messages.success(request, f'Email sent to {lead.name}.')
+    except Exception as e:
+        if request.htmx:
+            return HttpResponse(f'<div class="alert alert-danger">Email failed: {str(e)}</div>')
+        messages.error(request, f'Email failed: {str(e)}')
+    return redirect('my_conversations')
+
+
+@login_required
+@require_POST
+def update_lead_call_outcome(request, lead_id):
+    lead = get_object_or_404(Lead, id=lead_id)
+    outcome = request.POST.get('call_outcome')
+    notes = request.POST.get('call_outcome_notes', '').strip()
+    
+    valid_outcomes = dict(Lead.CALL_OUTCOME_CHOICES).keys()
+    if outcome not in valid_outcomes:
+        if request.htmx:
+            return HttpResponse('<div class="alert alert-danger">Invalid outcome selected.</div>')
+        messages.error(request, 'Invalid outcome selected.')
+        return redirect('staff_dashboard')
+    
+    lead.call_outcome = outcome
+    lead.call_outcome_notes = notes
+    
+    if outcome == 'success':
+        lead.status = 'confirmed'
+    elif outcome in ['unreachable', 'failed', 'not_answered']:
+        lead.status = outcome
+    
+    lead.save()
+    
+    if request.htmx:
+        return render(request, 'dashboard/partials/lead_row.html', {'lead': lead})
+    
+    messages.success(request, f'Call outcome updated for {lead.name}.')
+    return redirect('staff_dashboard')
