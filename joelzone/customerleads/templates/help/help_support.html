@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% load static humanize %}
+
+{% block title %}Help & Support - CRM{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <h2 class="mb-0 section-title">Help & Support</h2>
+    </div>
+
+    <div class="row g-4 mb-4">
+        <div class="col-md-4">
+            <div class="card dashboard-card shadow-custom h-100 p-4 text-center">
+                <div class="support-icon bg-primary mx-auto"><i class="fas fa-book"></i></div>
+                <h6 class="fw-bold mt-3 mb-1">Documentation</h6>
+                <p class="text-muted small">Browse guides and tutorials.</p>
+                <a href="#" class="btn btn-sm btn-outline-primary">Open Docs</a>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card dashboard-card shadow-custom h-100 p-4 text-center">
+                <div class="support-icon bg-success mx-auto"><i class="fas fa-headset"></i></div>
+                <h6 class="fw-bold mt-3 mb-1">Contact Support</h6>
+                <p class="text-muted small">Reach our team 24/7.</p>
+                <a href="mailto:support@joelzone.com" class="btn btn-sm btn-outline-success">Email Us</a>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card dashboard-card shadow-custom h-100 p-4 text-center">
+                <div class="support-icon bg-warning mx-auto"><i class="fas fa-life-ring"></i></div>
+                <h6 class="fw-bold mt-3 mb-1">Live Chat</h6>
+                <p class="text-muted small">Chat with an agent now.</p>
+                <a href="#" class="btn btn-sm btn-outline-warning">Start Chat</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="card dashboard-card shadow-custom">
+        <div class="card-header bg-white border-bottom py-3 px-4">
+            <h6 class="fw-bold mb-0"><i class="fas fa-question-circle me-2 text-primary"></i>Frequently Asked Questions</h6>
+        </div>
+        <div class="card-body p-4">
+            <div class="accordion" id="faqAccordion">
+                <div class="accordion-item border-0">
+                    <h2 class="accordion-header" id="faq1">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse1">
+                            How do I convert a lead into a client?
+                        </button>
+                    </h2>
+                    <div id="collapse1" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                        <div class="accordion-body text-muted">Open the lead detail page and click the green "Convert to Client" button. The lead will be moved to the Clients section.</div>
+                    </div>
+                </div>
+                <div class="accordion-item border-0">
+                    <h2 class="accordion-header" id="faq2">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse2">
+                            How do I assign tasks to team members?
+                        </button>
+                    </h2>
+                    <div id="collapse2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                        <div class="accordion-body text-muted">In the Tasks section, create a new task and use the "Assign To" field to select the responsible user.</div>
+                    </div>
+                </div>
+                <div class="accordion-item border-0">
+                    <h2 class="accordion-header" id="faq3">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse3">
+                            Where can I view call recordings?
+                        </button>
+                    </h2>
+                    <div id="collapse3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                        <div class="accordion-body text-muted">Call recordings are listed under each lead's interaction history once a call has been logged.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .support-icon { width: 56px; height: 56px; border-radius: 14px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 1.4rem; }
+</style>
+{% endblock %}

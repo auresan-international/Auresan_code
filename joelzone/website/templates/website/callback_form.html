@@ -1,14 +1,29 @@
 {% extends 'website/base.html' %}
 
-{% block title %}Request a Callback | Lead Arena{% endblock %}
+{% block title %}Request a Callback | AURESAN INTERNATIONAL LIMITED{% endblock %}
 
 {% block content %}
-<div class="page-banner" style="max-width:700px; margin:0 auto;">
-    <h1>Request a Callback</h1>
-    <form method="post">
-        {% csrf_token %}
-        {{ form.as_p }}
-        <button class="btn btn-primary" type="submit">Submit</button>
-    </form>
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-lg rounded-4 p-4 p-md-5 bg-white">
+                <div class="text-center mb-4">
+                    <span class="badge rounded-pill px-3 py-2 fw-bold text-dark mb-2" style="background: #f59e0b;">CONSULTATION</span>
+                    <h2 class="fw-extrabold text-dark">Request a Advisory Callback</h2>
+                    <p class="text-muted small">Fill in your contact info and an AURESAN health specialist will call you shortly.</p>
+                </div>
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        {{ form.as_p }}
+                    </div>
+                    <button class="btn btn-brand-primary btn-lg w-100 rounded-pill fw-bold" type="submit">
+                        <i class="fas fa-phone-volume me-2"></i>Submit Callback Request
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}
+

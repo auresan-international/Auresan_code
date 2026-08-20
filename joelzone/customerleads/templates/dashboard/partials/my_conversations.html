@@ -1,119 +1,270 @@
 {% load humanize %}
-<div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem; margin-bottom: 1.5rem;">
-    <h1 style="font-size: 1.6rem; font-weight: 600; margin: 0;">My Conversations</h1>
+
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+    <div>
+        <h2 class="h4 fw-bold mb-1 text-dark"><i class="fas fa-comments-sharp text-primary me-2"></i>Communications & Conversations</h2>
+        <p class="text-muted small mb-0">Initiate calls, send SMS & emails, and review call recordings.</p>
+    </div>
 </div>
 
-<!-- Start New Conversation Form -->
-<div class="metric-card" style="margin-bottom: 2rem; padding: 1.5rem;">
-    <h5 style="font-weight: 600; margin-bottom: 1rem;">Start New Conversation</h5>
-    <form hx-post="{% url 'start_conversation' %}" hx-target="#conversations-container" hx-swap="innerHTML" hx-push-url="false">
-        {% csrf_token %}
-        <div class="row g-3">
-            <div class="col-md-4">
-                <label for="id_lead" class="form-label">Lead</label>
-                <select class="form-select" id="id_lead" name="lead_id" required>
-                    <option value="">Select a lead</option>
-                    {% for lead in leads %}
-                    <option value="{{ lead.id }}">{{ lead.name }} - {{ lead.phone }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-                <div class="col-md-3">
-                <label for="id_type" class="form-label">Type</label>
-                <select class="form-select" id="id_type" name="interaction_type">
-                    {% for value, label in interaction_types %}
-                    <option value="{{ value }}">{{ label }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-5">
-                <label for="id_notes" class="form-label">Notes</label>
-                <input type="text" class="form-control" id="id_notes" name="notes" placeholder="Enter conversation notes" required>
-            </div>
-            <div class="col-12">
-                <button type="submit" class="btn btn-primary">
-                    <i class="fas fa-plus me-1"></i> Start Conversation
-                </button>
-            </div>
+{% if success_message %}
+<div class="alert alert-success alert-dismissible fade show rounded-3 shadow-sm mb-4" role="alert">
+    <i class="fas fa-check-circle me-2"></i>{{ success_message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+{% endif %}
+
+<!-- Start New Conversation Card -->
+<div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden bg-white">
+    <div class="card-header bg-white border-bottom py-3 px-4">
+        <h5 class="fw-bold mb-0 text-dark" style="font-size: 1.05rem;">
+            <i class="fas fa-paper-plane text-emerald me-2" style="color: #059669;"></i>Start New Conversation
+        </h5>
+    </div>
+    <div class="card-body p-4">
+        <!-- Mode Switcher Buttons -->
+        <div class="d-flex gap-2 mb-4 flex-wrap" id="channel-tab-group">
+            <button type="button" class="btn btn-outline-success active rounded-pill px-3 py-2 fw-semibold border-2 text-dark" id="btn-call-mode" onclick="switchChannel('call')">
+                <i class="fas fa-phone-alt me-1 text-success"></i> Phone Call
+            </button>
+            <button type="button" class="btn btn-outline-primary rounded-pill px-3 py-2 fw-semibold border-2 text-dark" id="btn-sms-mode" onclick="switchChannel('sms')">
+                <i class="fas fa-comment-sms me-1 text-primary"></i> SMS Text
+            </button>
+            <button type="button" class="btn btn-outline-info rounded-pill px-3 py-2 fw-semibold border-2 text-dark" id="btn-email-mode" onclick="switchChannel('email')">
+                <i class="fas fa-envelope me-1 text-info"></i> Email
+            </button>
+            <button type="button" class="btn btn-outline-secondary rounded-pill px-3 py-2 fw-semibold border-2 text-dark" id="btn-note-mode" onclick="switchChannel('note')">
+                <i class="fas fa-clipboard-list me-1 text-warning"></i> Log Note
+            </button>
         </div>
-    </form>
+
+        <form hx-post="{% url 'start_conversation' %}" hx-target="#main-content" hx-swap="innerHTML">
+            {% csrf_token %}
+            <input type="hidden" name="channel" id="input_channel" value="call">
+
+            <div class="row g-3">
+                <!-- Lead Select -->
+                <div class="col-md-5">
+                    <label for="id_lead_select" class="form-label fw-semibold small text-dark">Select Customer / Lead <span class="text-danger">*</span></label>
+                    <select class="form-select bg-light border-0 py-2" id="id_lead_select" name="lead_id" required>
+                        <option value="">-- Choose recipient --</option>
+                        {% for lead in leads %}
+                        <option value="{{ lead.id }}">{{ lead.name }} ({% if lead.phone %}{{ lead.phone }}{% else %}{{ lead.email }}{% endif %})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Note / Call Notes Field (Default Call Mode) -->
+                <div class="col-md-7" id="field-notes-wrapper">
+                    <label for="id_conversation_notes" class="form-label fw-semibold small text-dark" id="label-notes">Call Purpose / Notes</label>
+                    <input type="text" class="form-control bg-light border-0 py-2" id="id_conversation_notes" name="notes" placeholder="Enter conversation details or summary">
+                </div>
+
+                <!-- Email Fields (Hidden by Default) -->
+                <div class="col-md-7 d-none" id="field-email-wrapper">
+                    <div class="row g-2">
+                        <div class="col-12">
+                            <label class="form-label fw-semibold small text-dark">Email Subject <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control bg-light border-0 py-2" name="subject" id="input_subject" placeholder="e.g. Order Confirmation & Delivery Schedule">
+                        </div>
+                        <div class="col-12 mt-2">
+                            <label class="form-label fw-semibold small text-dark">Email Body Message <span class="text-danger">*</span></label>
+                            <textarea class="form-control bg-light border-0" name="message" id="input_email_message" rows="3" placeholder="Dear Customer, thank you for choosing AURESAN INTERNATIONAL LIMITED..."></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- SMS Fields (Hidden by Default) -->
+                <div class="col-md-7 d-none" id="field-sms-wrapper">
+                    <label class="form-label fw-semibold small text-dark">SMS Text Message <span class="text-danger">*</span></label>
+                    <textarea class="form-control bg-light border-0" name="message" id="input_sms_message" rows="2" placeholder="Hello from AURESAN INTERNATIONAL LIMITED! We are following up regarding your order..."></textarea>
+                </div>
+
+                <!-- Interaction Type Select (For Note Mode) -->
+                <div class="col-md-4 d-none" id="field-type-wrapper">
+                    <label for="id_interaction_type" class="form-label fw-semibold small text-dark">Interaction Category</label>
+                    <select class="form-select bg-light border-0 py-2" id="id_interaction_type" name="interaction_type">
+                        {% for value, label in interaction_types %}
+                        <option value="{{ value }}">{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Submit Button -->
+                <div class="col-12 mt-3 text-end">
+                    <button type="submit" class="btn btn-primary rounded-pill px-4 py-2 fw-bold" id="btn-submit-channel">
+                        <i class="fas fa-phone-alt me-1"></i> Initiate & Record Call
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
 </div>
 
-<div id="conversations-container">
-    {% if conversations or call_logs %}
-    <div class="metric-card" style="text-align: left; padding: 0;">
-        <ul style="list-style: none;">
-            {% for convo in conversations %}
-            <li style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border);">
-                <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
-                    <div style="flex: 1; min-width: 200px;">
-                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
-                            <strong style="color: var(--primary); font-size: 1.05rem;">{{ convo.lead.name }}</strong>
-                            <span style="background: #e0e7ff; color: var(--primary); padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">{{ convo.get_interaction_type_display }}</span>
-                        </div>
-                        <p style="margin: 0; color: var(--text-light); font-size: 0.95rem;">{{ convo.notes|truncatewords:25 }}</p>
-                        <p style="margin: 0.5rem 0 0; font-size: 0.8rem; color: #94a3b8;">{{ convo.interaction_date|date:"M d, Y, P" }}</p>
-                    </div>
-                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
-                        <form hx-post="{% url 'send_sms' lead_id=convo.lead.id %}" hx-target="#sms-result-{{ convo.lead.id }}-{{ forloop.counter }}" hx-swap="innerHTML" style="display: flex; gap: 0.25rem; flex-wrap: wrap; align-items: center;">
-                            {% csrf_token %}
-                            <input type="text" name="message" placeholder="Send SMS..." class="form-control form-control-sm" style="width: auto; display: inline-block;" required>
-                            <button type="submit" class="btn btn-sm btn-primary">SMS</button>
-                        </form>
-                        <span id="sms-result-{{ convo.lead.id }}-{{ forloop.counter }}"></span>
-                        <form hx-post="{% url 'send_email' lead_id=convo.lead.id %}" hx-target="#email-result-{{ convo.lead.id }}-{{ forloop.counter }}" hx-swap="innerHTML" style="display: flex; gap: 0.25rem; flex-wrap: wrap; align-items: center;">
-                            {% csrf_token %}
-                            <input type="text" name="subject" placeholder="Subject" class="form-control form-control-sm" style="width: auto; display: inline-block;" required>
-                            <input type="text" name="message" placeholder="Email message..." class="form-control form-control-sm" style="width: auto; display: inline-block;" required>
-                            <button type="submit" class="btn btn-sm btn-success">Email</button>
-                        </form>
-                        <span id="email-result-{{ convo.lead.id }}-{{ forloop.counter }}"></span>
-                    </div>
-                </div>
-            </li>
-            {% empty %}
-            {% endfor %}
+<!-- Conversations Feed & Call Recordings Container -->
+<div id="conversations-feed" class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white">
+    <div class="card-header bg-white border-bottom py-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <h5 class="fw-bold mb-0 text-dark" style="font-size: 1.05rem;">
+            <i class="fas fa-history text-primary me-2"></i>Conversation Activity & Call Recordings
+        </h5>
+        <span class="badge bg-light text-dark fw-normal px-3 py-2 rounded-pill">
+            <i class="fas fa-database me-1 text-muted"></i> Logged Items: {{ conversations.count|add:call_logs.count }}
+        </span>
+    </div>
+
+    <div class="card-body p-0">
+        {% if conversations or call_logs %}
+        <div class="list-group list-group-flush">
+            <!-- Render Call Logs with Audio Recordings First -->
             {% for call in call_logs %}
-            <li style="padding: 1.25rem 1.5rem; border-bottom: 1px solid var(--border);">
-                <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem;">
-                    <div style="flex: 1; min-width: 200px;">
-                        <div style="display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem;">
-                            <strong style="color: var(--primary); font-size: 1.05rem;">Call with {{ call.lead.name }}</strong>
-                            <span style="background: #fef3c7; color: #92400e; padding: 0.2rem 0.6rem; border-radius: 4px; font-size: 0.75rem; font-weight: 600;">{{ call.direction|title }}</span>
+            <div class="list-group-item p-4 border-bottom hover-bg-light">
+                <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+                    <div class="d-flex gap-3 align-items-start flex-grow-1">
+                        <div class="rounded-circle p-3 text-success shadow-sm flex-shrink-0" style="background: #dcfce7;">
+                            <i class="fas fa-phone-volume fa-lg"></i>
                         </div>
-                        <p style="margin: 0; color: var(--text-light); font-size: 0.95rem;">
-                            Status: {{ call.status|title }} | Duration: {{ call.duration }}s
+
+                        <div class="flex-grow-1">
+                            <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                                <h6 class="fw-bold mb-0 text-dark">Call with {{ call.lead.name }}</h6>
+                                <span class="badge bg-success bg-opacity-10 text-success rounded-pill px-2 py-1">
+                                    <i class="fas fa-arrow-up-right me-1"></i>{{ call.direction|title }}
+                                </span>
+                                <span class="badge bg-light text-dark rounded-pill px-2 py-1">
+                                    <i class="far fa-clock me-1 text-muted"></i>{{ call.duration }}s
+                                </span>
+                                <span class="badge bg-warning bg-opacity-10 text-dark rounded-pill px-2 py-1">
+                                    {{ call.status|title }}
+                                </span>
+                            </div>
+
+                            <p class="small text-muted mb-2">Phone: <strong>{{ call.lead.phone|default:"N/A" }}</strong> | Lead Status: {{ call.lead.get_status_display }}</p>
+
+                            <!-- Call Recording Audio Player -->
                             {% if call.recording_url %}
-                            | <a href="{{ call.recording_url }}" target="_blank" style="color: var(--primary);"><i class="fas fa-play-circle"></i> Recording</a>
+                            <div class="p-3 bg-light rounded-3 border mt-2 style-audio-card" style="max-width: 580px;">
+                                <div class="d-flex align-items-center justify-content-between mb-1">
+                                    <span class="small fw-semibold text-success"><i class="fas fa-compact-disc fa-spin me-1"></i> Call Audio Recording</span>
+                                    <a href="{{ call.recording_url }}" target="_blank" class="small text-primary text-decoration-none fw-semibold"><i class="fas fa-download me-1"></i> Download MP3</a>
+                                </div>
+                                <audio controls preload="none" class="w-100" style="height: 38px; border-radius: 6px;">
+                                    <source src="{{ call.recording_url }}" type="audio/mpeg">
+                                    Your browser does not support audio playback.
+                                </audio>
+                            </div>
                             {% endif %}
-                        </p>
-                        <p style="margin: 0.5rem 0 0; font-size: 0.8rem; color: #94a3b8;">{{ call.created_at|date:"M d, Y, P" }}</p>
+
+                            <span class="small text-muted d-block mt-2" style="font-size: 0.8rem;">
+                                <i class="far fa-calendar-alt me-1"></i>{{ call.created_at|date:"M d, Y @ H:i" }} ({{ call.created_at|naturaltime }})
+                            </span>
+                        </div>
                     </div>
-                    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
-                        <form hx-post="{% url 'send_sms' lead_id=call.lead.id %}" hx-target="#sms-result-call-{{ call.id }}" hx-swap="innerHTML" style="display: flex; gap: 0.25rem; flex-wrap: wrap; align-items: center;">
-                            {% csrf_token %}
-                            <input type="text" name="message" placeholder="Send SMS..." class="form-control form-control-sm" style="width: auto; display: inline-block;" required>
-                            <button type="submit" class="btn btn-sm btn-primary">SMS</button>
-                        </form>
-                        <span id="sms-result-call-{{ call.id }}"></span>
-                        <form hx-post="{% url 'send_email' lead_id=call.lead.id %}" hx-target="#email-result-call-{{ call.id }}" hx-swap="innerHTML" style="display: flex; gap: 0.25rem; flex-wrap: wrap; align-items: center;">
-                            {% csrf_token %}
-                            <input type="text" name="subject" placeholder="Subject" class="form-control form-control-sm" style="width: auto; display: inline-block;" required>
-                            <input type="text" name="message" placeholder="Email message..." class="form-control form-control-sm" style="width: auto; display: inline-block;" required>
-                            <button type="submit" class="btn btn-sm btn-success">Email</button>
-                        </form>
-                        <span id="email-result-call-{{ call.id }}"></span>
+
+                    <!-- Action buttons -->
+                    <div class="d-flex gap-2 align-items-center">
+                        <a href="tel:{{ call.lead.phone }}" class="btn btn-sm btn-outline-success rounded-pill px-3">
+                            <i class="fas fa-phone-alt me-1"></i> Redial
+                        </a>
                     </div>
                 </div>
-            </li>
-            {% empty %}
+            </div>
             {% endfor %}
-        </ul>
+
+            <!-- Render Interactions (SMS, Email, Notes) -->
+            {% for convo in conversations %}
+            <div class="list-group-item p-4 border-bottom hover-bg-light">
+                <div class="d-flex justify-content-between align-items-start flex-wrap gap-3">
+                    <div class="d-flex gap-3 align-items-start flex-grow-1">
+                        {% if convo.interaction_type == 'email' %}
+                            <div class="rounded-circle p-3 text-info shadow-sm flex-shrink-0" style="background: #e0f2fe;">
+                                <i class="fas fa-envelope fa-lg"></i>
+                            </div>
+                        {% elif '[SMS' in convo.notes %}
+                            <div class="rounded-circle p-3 text-primary shadow-sm flex-shrink-0" style="background: #dbeafe;">
+                                <i class="fas fa-comment-sms fa-lg"></i>
+                            </div>
+                        {% else %}
+                            <div class="rounded-circle p-3 text-warning shadow-sm flex-shrink-0" style="background: #fef3c7;">
+                                <i class="fas fa-clipboard-check fa-lg"></i>
+                            </div>
+                        {% endif %}
+
+                        <div>
+                            <div class="d-flex align-items-center gap-2 flex-wrap mb-1">
+                                <h6 class="fw-bold mb-0 text-dark">{{ convo.lead.name }}</h6>
+                                <span class="badge bg-primary bg-opacity-10 text-primary rounded-pill px-2 py-1">
+                                    {{ convo.get_interaction_type_display }}
+                                </span>
+                            </div>
+                            <p class="text-secondary small mb-1" style="max-width: 700px; line-height: 1.5;">{{ convo.notes }}</p>
+                            <span class="small text-muted d-block" style="font-size: 0.8rem;">
+                                <i class="far fa-calendar-alt me-1"></i>{{ convo.interaction_date|date:"M d, Y @ H:i" }} ({{ convo.interaction_date|naturaltime }})
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <form hx-post="{% url 'send_sms' lead_id=convo.lead.id %}" hx-target="#sms-res-{{ convo.id }}" hx-swap="innerHTML" class="d-flex gap-1 align-items-center">
+                            {% csrf_token %}
+                            <input type="text" name="message" placeholder="Quick SMS..." class="form-control form-control-sm rounded-pill" style="width: 140px;" required>
+                            <button type="submit" class="btn btn-sm btn-primary rounded-pill px-3">SMS</button>
+                        </form>
+                        <span id="sms-res-{{ convo.id }}"></span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="fas fa-comments-slash text-muted fa-3x mb-3 opacity-50"></i>
+            <p class="text-muted fw-semibold mb-0">No conversations or call recordings logged yet.</p>
+        </div>
+        {% endif %}
     </div>
-    {% else %}
-    <div class="metric-card text-center py-5">
-        <i class="fas fa-comments" style="font-size: 3rem; color: #cbd5e1; margin-bottom: 1rem;"></i>
-        <p style="color: var(--text-muted);">You have no conversations yet.</p>
-    </div>
-    {% endif %}
 </div>
+
+<script>
+function switchChannel(channel) {
+    document.getElementById('input_channel').value = channel;
+    
+    // Toggle active state on buttons
+    document.querySelectorAll('#channel-tab-group button').forEach(btn => btn.classList.remove('active', 'btn-success', 'btn-primary', 'btn-info', 'btn-secondary'));
+    
+    const notesWrapper = document.getElementById('field-notes-wrapper');
+    const emailWrapper = document.getElementById('field-email-wrapper');
+    const smsWrapper = document.getElementById('field-sms-wrapper');
+    const typeWrapper = document.getElementById('field-type-wrapper');
+    const submitBtn = document.getElementById('btn-submit-channel');
+    
+    notesWrapper.classList.add('d-none');
+    emailWrapper.classList.add('d-none');
+    smsWrapper.classList.add('d-none');
+    typeWrapper.classList.add('d-none');
+    
+    if (channel === 'call') {
+        document.getElementById('btn-call-mode').classList.add('active', 'btn-success');
+        notesWrapper.classList.remove('d-none');
+        document.getElementById('label-notes').textContent = 'Call Subject / Reason';
+        submitBtn.className = 'btn btn-success rounded-pill px-4 py-2 fw-bold';
+        submitBtn.innerHTML = '<i class="fas fa-phone-alt me-1"></i> Initiate & Record Call';
+    } else if (channel === 'sms') {
+        document.getElementById('btn-sms-mode').classList.add('active', 'btn-primary');
+        smsWrapper.classList.remove('d-none');
+        submitBtn.className = 'btn btn-primary rounded-pill px-4 py-2 fw-bold';
+        submitBtn.innerHTML = '<i class="fas fa-paper-plane me-1"></i> Send SMS Message';
+    } else if (channel === 'email') {
+        document.getElementById('btn-email-mode').classList.add('active', 'btn-info');
+        emailWrapper.classList.remove('d-none');
+        submitBtn.className = 'btn btn-info text-white rounded-pill px-4 py-2 fw-bold';
+        submitBtn.innerHTML = '<i class="fas fa-envelope me-1"></i> Send Email Message';
+    } else if (channel === 'note') {
+        document.getElementById('btn-note-mode').classList.add('active', 'btn-secondary');
+        notesWrapper.classList.remove('d-none');
+        typeWrapper.classList.remove('d-none');
+        document.getElementById('label-notes').textContent = 'Interaction Notes';
+        submitBtn.className = 'btn btn-secondary rounded-pill px-4 py-2 fw-bold';
+        submitBtn.innerHTML = '<i class="fas fa-save me-1"></i> Save Log Note';
+    }
+}
+</script>

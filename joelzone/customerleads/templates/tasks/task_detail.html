@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% load static humanize %}
+
+{% block title %}{{ task.title }} - Task Details | AURESAN CRM{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1">
+                    <li class="breadcrumb-item"><a href="{% url 'tasks' %}">Tasks</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ task.title|truncatechars:40 }}</li>
+                </ol>
+            </nav>
+            <h2 class="h3 fw-bold mb-0 text-dark">{{ task.title }}</h2>
+            <p class="text-muted small mb-0">
+                <span class="badge bg-{{ task.get_priority_color }}">{{ task.get_priority_display }}</span>
+                <span class="badge {% if task.completed %}bg-success{% else %}bg-secondary{% endif %}">
+                    {{ task.completed|yesno:"Completed,Pending" }}
+                </span>
+            </p>
+        </div>
+
+        <div class="d-flex gap-2">
+            {% if not task.completed %}
+            <a href="{% url 'task_complete' task.pk %}" class="btn btn-success rounded-pill px-3">
+                <i class="fas fa-check me-1"></i> Mark Complete
+            </a>
+            {% endif %}
+            <a href="{% url 'task_update' task.pk %}" class="btn btn-outline-primary rounded-pill px-3">
+                <i class="fas fa-edit me-1"></i> Edit
+            </a>
+            <a href="{% url 'tasks' %}" class="btn btn-light rounded-pill px-3">
+                <i class="fas fa-arrow-left me-1"></i> Back
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4 bg-white">
+                <div class="card-header bg-white border-bottom py-3 px-4">
+                    <h6 class="fw-bold mb-0"><i class="fas fa-align-left me-2 text-primary"></i>Description</h6>
+                </div>
+                <div class="card-body p-4">
+                    <p class="text-secondary mb-0">{{ task.description|linebreaks|default:"No description provided." }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 bg-white">
+                <div class="card-body p-4">
+                    <p class="mb-2"><strong><i class="fas fa-user me-2 text-primary"></i>Assigned To:</strong> {{ task.assigned_to.get_full_name|default:"Unassigned" }}</p>
+                    <p class="mb-2"><strong><i class="fas fa-calendar-alt me-2 text-warning"></i>Due Date:</strong> {{ task.due_date|date:"M d, Y @ H:i" }}</p>
+                    {% if task.related_lead %}
+                    <p class="mb-2"><strong><i class="fas fa-user-tie me-2 text-info"></i>Related Lead:</strong>
+                        <a href="{% url 'lead_detail' task.related_lead.pk %}">{{ task.related_lead.name }}</a>
+                    </p>
+                    {% endif %}
+                    <p class="mb-0"><strong><i class="fas fa-clock me-2 text-muted"></i>Created:</strong> {{ task.created_at|naturaltime }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,21 +1,35 @@
 {% extends 'website/base.html' %}
 
-{% block title %}{{ condition.title }} | Lead Arena{% endblock %}
+{% block title %}{{ condition.title }} | AURESAN INTERNATIONAL LIMITED{% endblock %}
 
 {% block content %}
-<div class="page-banner" style="max-width:900px; margin:0 auto;">
-    <h1>{{ condition.title }}</h1>
-    <p style="color:#64748b;">{{ condition.description }}</p>
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card border-0 shadow-lg rounded-4 p-4 p-md-5 bg-white">
+                <span class="badge rounded-pill px-3 py-2 fw-bold text-dark mb-2 d-inline-block" style="background: #f59e0b; width: fit-content;">HEALTH CONDITION CARE</span>
+                <h1 class="display-5 fw-extrabold text-dark mb-3">{{ condition.title }}</h1>
+                <p class="text-secondary fs-6 mb-4">{{ condition.description }}</p>
 
-    <h3>Recommended Products</h3>
-    <div style="display:grid; grid-template-columns: repeat(auto-fit,minmax(220px,1fr)); gap:0.75rem;">
-        {% for p in recommended %}
-            <div style="background:white; padding:0.75rem; border:1px solid #f1f5f9; border-radius:8px;">
-                <strong>{{ p.title }}</strong>
-                <p style="color:#64748b;">{{ p.short_description|truncatewords:20 }}</p>
-                <a href="{{ p.get_absolute_url }}" class="btn btn-sm">View</a>
+                <h3 class="fw-bold text-dark mb-4">Recommended AURESAN Formulations</h3>
+                <div class="row g-4">
+                    {% for p in recommended %}
+                        <div class="col-md-4">
+                            <div class="card h-100 border rounded-4 p-3 hover-lift">
+                                <h5 class="fw-bold mb-2">{{ p.title }}</h5>
+                                <p class="text-muted small mb-3">{{ p.short_description|truncatewords:20 }}</p>
+                                <a href="{{ p.get_absolute_url }}" class="btn btn-sm btn-brand-primary rounded-pill mt-auto fw-semibold" style="width: fit-content;">View Formula</a>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <div class="col-12 text-center py-4">
+                            <p class="text-muted">No specific recommended products currently listed for this condition.</p>
+                        </div>
+                    {% endfor %}
+                </div>
             </div>
-        {% endfor %}
+        </div>
     </div>
 </div>
 {% endblock %}
+

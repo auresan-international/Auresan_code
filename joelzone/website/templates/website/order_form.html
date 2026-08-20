@@ -1,89 +1,37 @@
 {% extends 'website/base.html' %}
 
-{% block title %}Place Order | Lead Arena{% endblock %}
+{% block title %}Place Order | AURESAN INTERNATIONAL LIMITED{% endblock %}
 
 {% block content %}
-<div class="page-banner" style="max-width:700px; margin:0 auto;">
-    <h1>Place an Order</h1>
-    <form method="post" class="order-form">
-        {% csrf_token %}
-        <div class="form-container">
-            {% for field in form %}
-                <div class="form-group">
-                    {{ field.label_tag }}
-                    {{ field }}
-                    {% if field.errors %}
-                        <div class="error-messages">{{ field.errors }}</div>
-                    {% endif %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-lg rounded-4 p-4 p-md-5 bg-white">
+                <div class="text-center mb-4">
+                    <span class="badge rounded-pill px-3 py-2 fw-bold text-dark mb-2" style="background: #f59e0b;">DIRECT ORDER</span>
+                    <h2 class="fw-extrabold text-dark">Place an Official Order</h2>
+                    <p class="text-muted small">Select your supplement package and delivery information for AURESAN INTERNATIONAL LIMITED.</p>
                 </div>
-            {% endfor %}
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="form-container">
+                        {% for field in form %}
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small text-dark">{{ field.label }}</label>
+                                {{ field }}
+                                {% if field.errors %}
+                                    <div class="text-danger small mt-1">{{ field.errors }}</div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <button class="btn btn-brand-primary btn-lg w-100 rounded-pill fw-bold py-3 mt-3" type="submit">
+                        <i class="fas fa-check-circle me-2"></i>Confirm & Submit Order
+                    </button>
+                </form>
+            </div>
         </div>
-        <button class="btn btn-primary btn-submit" type="submit">Place Order</button>
-    </form> 
+    </div>
 </div>
-
-<style>
-    .order-form {
-        background-color: #f9f9f9;
-        padding: 30px;
-        border-radius: 8px;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-    }
-    
-    .form-container {
-        margin-bottom: 25px;
-    }
-    
-    .form-group {
-        margin-bottom: 20px;
-    }
-    
-    .form-group label {
-        display: block;
-        margin-bottom: 8px;
-        font-weight: 600;
-        color: #333;
-        font-size: 14px;
-    }
-    
-    .form-group input,
-    .form-group select,
-    .form-group textarea {
-        width: 100%;
-        padding: 10px 12px;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        font-size: 14px;
-        font-family: inherit;
-        transition: border-color 0.3s;
-        box-sizing: border-box;
-    }
-    
-    .form-group input:focus,
-    .form-group select:focus,
-    .form-group textarea:focus {
-        outline: none;
-        border-color: #007bff;
-        box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.1);
-    }
-    
-    .error-messages {
-        color: #dc3545;
-        font-size: 13px;
-        margin-top: 5px;
-    }
-    
-    .btn-submit {
-        width: 100%;
-        padding: 12px;
-        font-size: 16px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: background-color 0.3s;
-    }
-    
-    .btn-submit:hover {
-        opacity: 0.9;
-    }
-</style>
 {% endblock %}
+

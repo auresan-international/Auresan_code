@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 110" width="100%" height="100%">
+  <defs>
+    <!-- Emerald to Forest Gradient -->
+    <linearGradient id="aurEmerald" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#059669" />
+      <stop offset="100%" stop-color="#022c22" />
+    </linearGradient>
+
+    <!-- Luxury Gold Gradient -->
+    <linearGradient id="aurGold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F59E0B" />
+      <stop offset="50%" stop-color="#D97706" />
+      <stop offset="100%" stop-color="#B45309" />
+    </linearGradient>
+
+    <filter id="subtleGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- EMBLEM ICON: Crest with Leaf + Sun & Golden A -->
+  <g transform="translate(10, 10)">
+    <!-- Golden Outer Hex Shield -->
+    <polygon points="45,4 82,24 82,66 45,86 8,66 8,24" fill="none" stroke="url(#aurGold)" stroke-width="3.5" stroke-linejoin="round"/>
+    <!-- Emerald Glow Backdrop -->
+    <polygon points="45,9 77,27 77,63 45,81 13,63 13,27" fill="url(#aurEmerald)" opacity="0.95"/>
+    
+    <!-- Central Leaf & Golden Sun Motif -->
+    <path d="M45 20 C 58 20, 68 32, 68 46 C 68 62, 45 74, 45 74 C 45 74, 22 62, 22 46 C 22 32, 32 20, 45 20 Z" fill="none" stroke="url(#aurGold)" stroke-width="2"/>
+    <path d="M45 25 Q 52 42 62 48" fill="none" stroke="url(#aurGold)" stroke-width="2" stroke-linecap="round"/>
+    <circle cx="45" cy="45" r="5" fill="url(#aurGold)"/>
+  </g>
+
+  <!-- BRAND NAME TYPOGRAPHY -->
+  <text x="110" y="58" font-family="'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, sans-serif" font-weight="900" font-size="42" fill="#0F172A" letter-spacing="2">AURESAN</text>
+  <text x="112" y="82" font-family="'Inter', system-ui, -apple-system, sans-serif" font-weight="700" font-size="13" fill="url(#aurGold)" letter-spacing="5">INTERNATIONAL LIMITED</text>
+  <rect x="110" y="90" width="380" height="2.5" rx="1" fill="url(#aurGold)" opacity="0.8"/>
+</svg>

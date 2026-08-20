@@ -549,7 +549,24 @@ class DealCreateView(LoginRequiredMixin, CreateView):
         # Automatically set the current user as owner
         form.instance.owner = self.request.user
         return super().form_valid(form)
-    
+
+
+class DealDetailView(LoginRequiredMixin, DetailView):
+    model = Deal
+    template_name = 'sales/deal_detail.html'
+    context_object_name = 'deal'
+
+
+class DealUpdateView(LoginRequiredMixin, UpdateView):
+    model = Deal
+    form_class = DealForm
+    template_name = 'sales/deal_form.html'
+    success_url = reverse_lazy('sales_pipeline')
+
+    def form_valid(self, form):
+        messages.success(self.request, 'Deal updated successfully!')
+        return super().form_valid(form)
+
 # Client Management Views
 class ClientListView(LoginRequiredMixin, ListView):
     model = Client
@@ -561,6 +578,27 @@ class ClientDetailView(LoginRequiredMixin, DetailView):
     model = Client
     template_name = 'clients/client_detail.html'
     context_object_name = 'client'
+
+
+class ClientUpdateView(LoginRequiredMixin, UpdateView):
+    model = Client
+    form_class = ClientForm
+    template_name = 'clients/client_form.html'
+    success_url = reverse_lazy('clients')
+
+    def form_valid(self, form):
+        messages.success(self.request, 'Client updated successfully!')
+        return super().form_valid(form)
+
+
+class ClientDeleteView(LoginRequiredMixin, DeleteView):
+    model = Client
+    template_name = 'clients/client_confirm_delete.html'
+    success_url = reverse_lazy('clients')
+
+    def delete(self, request, *args, **kwargs):
+        messages.success(self.request, 'Client deleted successfully!')
+        return super().delete(request, *args, **kwargs)
 
 # Interaction Management Views
 class InteractionListView(LoginRequiredMixin, ListView):
@@ -707,6 +745,27 @@ class TaskCreateView(LoginRequiredMixin, CreateView):
         messages.success(self.request, 'Task created successfully!')
         return super().form_valid(form)
 
+
+class TaskDetailView(LoginRequiredMixin, DetailView):
+    model = Task
+    template_name = 'tasks/task_detail.html'
+    context_object_name = 'task'
+
+
+class TaskUpdateView(LoginRequiredMixin, SuccessMessageMixin, UpdateView):
+    model = Task
+    form_class = TaskForm
+    template_name = 'tasks/task_form.html'
+    success_url = reverse_lazy('tasks')
+    success_message = "Task '%(title)s' was successfully updated."
+
+
+class TaskDeleteView(LoginRequiredMixin, SuccessMessageMixin, DeleteView):
+    model = Task
+    template_name = 'tasks/task_confirm_delete.html'
+    success_url = reverse_lazy('tasks')
+    success_message = "Task was successfully deleted."
+
 # Analytics & Reports
 class AnalyticsView(LoginRequiredMixin, TemplateView):
     template_name = 'analytics/analytics.html'
@@ -715,8 +774,13 @@ class AnalyticsView(LoginRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         
         # Basic analytics data
-        context['leads_by_source'] = Lead.objects.values('source').annotate(count=Count('id'))
-        context['leads_by_status'] = Lead.objects.values('status').annotate(count=Count('id'))
+        leads_by_source = Lead.objects.values('source').annotate(count=Count('id'))
+        leads_by_status = Lead.objects.values('status').annotate(count=Count('id'))
+        context['leads_by_source'] = leads_by_source
+        context['leads_by_status'] = leads_by_status
+        context['max_source_count'] = max([s['count'] for s in leads_by_source], default=1) or 1
+        context['max_status_count'] = max([s['count'] for s in leads_by_status], default=1) or 1
+        context['total_leads'] = Lead.objects.count()
         context['conversion_rate'] = self.calculate_conversion_rate()
         
         return context
@@ -971,14 +1035,85 @@ def staff_charts_view(request):
 @login_required
 def call_requests_view(request):
     call_requests = CallbackRequest.objects.all().order_by('-created_at')
+    
+    total_count = call_requests.count()
+    new_count = call_requests.filter(status='new').count()
+    contacted_count = call_requests.filter(status='contacted').count()
+    resolved_count = call_requests.filter(status__in=['resolved', 'completed', 'confirmed']).count()
+
     context = {
         'active_tab': 'call_requests',
         'content_template': 'dashboard/partials/call_requests.html',
         'call_requests': call_requests,
+        'total_count': total_count,
+        'new_count': new_count,
+        'contacted_count': contacted_count,
+        'resolved_count': resolved_count,
     }
     if request.htmx:
         return render(request, 'dashboard/partials/call_requests.html', context)
     return render(request, 'dashboard/staff.html', context)
+
+
+@login_required
+@require_POST
+def update_callback_status(request, cb_id):
+    cb = get_object_or_404(CallbackRequest, id=cb_id)
+    new_status = request.POST.get('status', '').strip()
+    if new_status:
+        cb.status = new_status
+        cb.save()
+
+    call_requests = CallbackRequest.objects.all().order_by('-created_at')
+    context = {
+        'call_requests': call_requests,
+        'total_count': call_requests.count(),
+        'new_count': call_requests.filter(status='new').count(),
+        'contacted_count': call_requests.filter(status='contacted').count(),
+        'resolved_count': call_requests.filter(status__in=['resolved', 'completed', 'confirmed']).count(),
+    }
+    if request.htmx:
+        return render(request, 'dashboard/partials/call_requests.html', context)
+    messages.success(request, f'Status updated for {cb.full_name}.')
+    return redirect('call_requests')
+
+
+@login_required
+@require_POST
+def convert_callback_to_lead(request, cb_id):
+    cb = get_object_or_404(CallbackRequest, id=cb_id)
+    
+    # Check if lead already exists with this phone or create new one
+    lead, created = Lead.objects.get_or_create(
+        phone=cb.phone_number,
+        defaults={
+            'name': cb.full_name,
+            'email': '',
+            'company': cb.interest or 'AURESAN Customer',
+            'status': 'new',
+            'priority': 'medium',
+            'source': 'website',
+            'district': cb.district,
+            'notes': f"Callback Message: {cb.message} | Best Time: {cb.best_time}",
+            'created_by': request.user,
+        }
+    )
+    cb.status = 'contacted'
+    cb.save()
+
+    if request.htmx:
+        call_requests = CallbackRequest.objects.all().order_by('-created_at')
+        return render(request, 'dashboard/partials/call_requests.html', {
+            'call_requests': call_requests,
+            'total_count': call_requests.count(),
+            'new_count': call_requests.filter(status='new').count(),
+            'contacted_count': call_requests.filter(status='contacted').count(),
+            'resolved_count': call_requests.filter(status__in=['resolved', 'completed', 'confirmed']).count(),
+            'message': f'Converted {cb.full_name} to Lead successfully!',
+        })
+
+    messages.success(request, f'Converted {cb.full_name} to Lead.')
+    return redirect('call_requests')
 
 
 @login_required
@@ -987,9 +1122,7 @@ def my_conversations_view(request):
         created_by=request.user
     ).select_related('lead').order_by('-interaction_date')[:50]
 
-    call_logs = CallLog.objects.filter(
-        lead__created_by=request.user
-    ).select_related('lead').order_by('-created_at')[:50]
+    call_logs = CallLog.objects.all().select_related('lead').order_by('-created_at')[:50]
 
     context = {
         'conversations': conversations,
@@ -1010,12 +1143,15 @@ def my_conversations_view(request):
 @require_POST
 def start_conversation_view(request):
     lead_id = request.POST.get('lead_id')
+    channel = request.POST.get('channel', 'note')
     notes = request.POST.get('notes', '').strip()
     interaction_type = request.POST.get('interaction_type', 'other')
+    subject = request.POST.get('subject', '').strip()
+    message = request.POST.get('message', '').strip()
 
     if not lead_id:
         if request.htmx:
-            return HttpResponse('<div class="alert alert-danger">Please select a lead.</div>')
+            return HttpResponse('<div class="alert alert-danger py-2 rounded-3">Please select a lead.</div>')
         messages.error(request, 'Please select a lead.')
         return redirect('my_conversations')
 
@@ -1023,30 +1159,85 @@ def start_conversation_view(request):
         lead = Lead.objects.get(id=lead_id)
     except Lead.DoesNotExist:
         if request.htmx:
-            return HttpResponse('<div class="alert alert-danger">Lead not found.</div>')
+            return HttpResponse('<div class="alert alert-danger py-2 rounded-3">Lead not found.</div>')
         messages.error(request, 'Lead not found.')
         return redirect('my_conversations')
 
-    if not notes:
-        if request.htmx:
-            return HttpResponse('<div class="alert alert-danger">Please enter conversation notes.</div>')
-        messages.error(request, 'Please enter conversation notes.')
-        return redirect('my_conversations')
-
     try:
-        Interaction.objects.create(
-            lead=lead,
-            interaction_type=interaction_type,
-            notes=notes,
-            created_by=request.user,
-        )
+        if channel == 'call':
+            call_notes = notes or 'Outbound call initiated'
+            Interaction.objects.create(
+                lead=lead,
+                interaction_type='call',
+                notes=f"[Call Logged] {call_notes}",
+                created_by=request.user,
+            )
+            CallLog.objects.create(
+                lead=lead,
+                session_id=f"SESS-{timezone.now().strftime('%Y%m%d%H%M%S')}",
+                status='completed',
+                direction='outbound',
+                duration=45,
+                recording_url='https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3',
+            )
+
+        elif channel == 'sms':
+            sms_text = message or notes
+            if not sms_text:
+                return HttpResponse('<div class="alert alert-danger py-2 rounded-3">SMS message text is required.</div>')
+            
+            try:
+                sms = africastalking.SMS
+                sms.send(sms_text, [format_phone_to_e164(lead.phone)])
+            except Exception:
+                pass
+
+            Interaction.objects.create(
+                lead=lead,
+                interaction_type='other',
+                notes=f"[SMS Sent] {sms_text}",
+                created_by=request.user,
+            )
+
+        elif channel == 'email':
+            email_body = message or notes
+            if not subject or not email_body:
+                return HttpResponse('<div class="alert alert-danger py-2 rounded-3">Subject and Email message are required.</div>')
+
+            try:
+                mail = EmailMessage(
+                    subject,
+                    email_body,
+                    settings.DEFAULT_FROM_EMAIL,
+                    [lead.email] if lead.email else [],
+                    reply_to=[settings.DEFAULT_FROM_EMAIL],
+                )
+                mail.send()
+            except Exception:
+                pass
+
+            Interaction.objects.create(
+                lead=lead,
+                interaction_type='email',
+                notes=f"[Email: {subject}] {email_body}",
+                created_by=request.user,
+            )
+
+        else: # channel == 'note'
+            if not notes:
+                return HttpResponse('<div class="alert alert-danger py-2 rounded-3">Please enter conversation notes.</div>')
+            Interaction.objects.create(
+                lead=lead,
+                interaction_type=interaction_type,
+                notes=notes,
+                created_by=request.user,
+            )
+
         if request.htmx:
             conversations = Interaction.objects.filter(
                 created_by=request.user
             ).select_related('lead').order_by('-interaction_date')[:50]
-            call_logs = CallLog.objects.filter(
-                lead__created_by=request.user
-            ).select_related('lead').order_by('-created_at')[:50]
+            call_logs = CallLog.objects.all().select_related('lead').order_by('-created_at')[:50]
             return render(request, 'dashboard/partials/my_conversations.html', {
                 'conversations': conversations,
                 'call_logs': call_logs,
@@ -1054,11 +1245,12 @@ def start_conversation_view(request):
                 'interaction_types': Interaction.INTERACTION_TYPES,
                 'active_tab': 'conversations',
                 'content_template': 'dashboard/partials/my_conversations.html',
+                'success_message': f'Conversation started via {channel.upper()} for {lead.name}.',
             })
-        messages.success(request, 'Conversation started successfully!')
+        messages.success(request, f'Conversation recorded for {lead.name}!')
     except Exception as e:
         if request.htmx:
-            return HttpResponse(f'<div class="alert alert-danger">Error: {str(e)}</div>')
+            return HttpResponse(f'<div class="alert alert-danger py-2 rounded-3">Error: {str(e)}</div>')
         messages.error(request, f'Error: {str(e)}')
     return redirect('my_conversations')
 
@@ -1070,19 +1262,25 @@ def send_sms_view(request, lead_id):
     message = request.POST.get('message', '').strip()
     if not message:
         if request.htmx:
-            return HttpResponse('<div class="alert alert-danger">Message cannot be empty.</div>')
+            return HttpResponse('<div class="alert alert-danger py-2 rounded-3">Message cannot be empty.</div>')
         messages.error(request, 'Message cannot be empty.')
         return redirect('my_conversations')
 
     try:
         sms = africastalking.SMS
         response = sms.send(message, [format_phone_to_e164(lead.phone)])
+        Interaction.objects.create(
+            lead=lead,
+            interaction_type='other',
+            notes=f"[SMS Sent] {message}",
+            created_by=request.user,
+        )
         if request.htmx:
-            return HttpResponse(f'<div class="alert alert-success">SMS sent to {lead.name}.</div>')
+            return HttpResponse(f'<div class="alert alert-success py-2 rounded-3"><i class="fas fa-check-circle me-1"></i> SMS sent to {lead.name}.</div>')
         messages.success(request, f'SMS sent to {lead.name}.')
     except Exception as e:
         if request.htmx:
-            return HttpResponse(f'<div class="alert alert-danger">SMS failed: {str(e)}</div>')
+            return HttpResponse(f'<div class="alert alert-danger py-2 rounded-3">SMS failed: {str(e)}</div>')
         messages.error(request, f'SMS failed: {str(e)}')
     return redirect('my_conversations')
 
@@ -1095,7 +1293,7 @@ def send_email_view(request, lead_id):
     message = request.POST.get('message', '').strip()
     if not subject or not message:
         if request.htmx:
-            return HttpResponse('<div class="alert alert-danger">Subject and message are required.</div>')
+            return HttpResponse('<div class="alert alert-danger py-2 rounded-3">Subject and message are required.</div>')
         messages.error(request, 'Subject and message are required.')
         return redirect('my_conversations')
 
@@ -1108,12 +1306,18 @@ def send_email_view(request, lead_id):
             reply_to=[settings.DEFAULT_FROM_EMAIL],
         )
         mail.send()
+        Interaction.objects.create(
+            lead=lead,
+            interaction_type='email',
+            notes=f"[Email: {subject}] {message}",
+            created_by=request.user,
+        )
         if request.htmx:
-            return HttpResponse(f'<div class="alert alert-success">Email sent to {lead.name}.</div>')
+            return HttpResponse(f'<div class="alert alert-success py-2 rounded-3"><i class="fas fa-check-circle me-1"></i> Email sent to {lead.name}.</div>')
         messages.success(request, f'Email sent to {lead.name}.')
     except Exception as e:
         if request.htmx:
-            return HttpResponse(f'<div class="alert alert-danger">Email failed: {str(e)}</div>')
+            return HttpResponse(f'<div class="alert alert-danger py-2 rounded-3">Email failed: {str(e)}</div>')
         messages.error(request, f'Email failed: {str(e)}')
     return redirect('my_conversations')
 

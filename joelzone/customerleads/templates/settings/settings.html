@@ -1,0 +1,97 @@
+{% extends "base.html" %}
+{% load static humanize %}
+
+{% block title %}Settings - CRM{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <h2 class="mb-0 section-title">System Settings</h2>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-6">
+            <div class="card dashboard-card shadow-custom h-100">
+                <div class="card-header bg-white border-bottom py-3 px-4">
+                    <h6 class="fw-bold mb-0"><i class="fas fa-building me-2 text-primary"></i>Company Profile</h6>
+                </div>
+                <div class="card-body p-4">
+                    <form>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Company Name</label>
+                            <input type="text" class="form-control" value="AURESAN INTERNATIONAL LIMITED">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Support Email</label>
+                            <input type="email" class="form-control" value="support@auresan.com">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Phone Number</label>
+                            <input type="text" class="form-control" value="+254 700 000 000">
+                        </div>
+                        <div class="mt-4 border-top pt-3 text-end">
+                            <button type="submit" class="btn btn-primary px-4">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6">
+            <div class="card dashboard-card shadow-custom h-100">
+                <div class="card-header bg-white border-bottom py-3 px-4">
+                    <h6 class="fw-bold mb-0"><i class="fas fa-shield-alt me-2 text-success"></i>Security & Access</h6>
+                </div>
+                <div class="card-body p-4">
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="twofa">
+                        <label class="form-check-label fw-semibold" for="twofa">Require two-factor authentication</label>
+                    </div>
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="ipallow" checked>
+                        <label class="form-check-label fw-semibold" for="ipallow">Restrict to approved IP ranges</label>
+                    </div>
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="session" checked>
+                        <label class="form-check-label fw-semibold" for="session">Auto-logout after inactivity</label>
+                    </div>
+                    <div class="mb-3 mt-4">
+                        <label class="form-label fw-bold">Session Timeout (minutes)</label>
+                        <input type="number" class="form-control" value="30">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-12">
+            <div class="card dashboard-card shadow-custom">
+                <div class="card-header bg-white border-bottom py-3 px-4">
+                    <h6 class="fw-bold mb-0"><i class="fas fa-plug me-2 text-warning"></i>Integrations</h6>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <div class="d-flex justify-content-between align-items-center border rounded-3 p-3">
+                                <span><i class="fas fa-comment-dots me-2 text-success"></i>Africa's Talking</span>
+                                <span class="badge bg-success">Connected</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-flex justify-content-between align-items-center border rounded-3 p-3">
+                                <span><i class="fas fa-envelope me-2 text-primary"></i>SMTP Email</span>
+                                <span class="badge bg-success">Connected</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-flex justify-content-between align-items-center border rounded-3 p-3">
+                                <span><i class="fas fa-cloud me-2 text-info"></i>Backup Storage</span>
+                                <span class="badge bg-secondary">Not Set</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

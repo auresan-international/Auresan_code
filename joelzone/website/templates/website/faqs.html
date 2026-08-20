@@ -1,17 +1,33 @@
 {% extends 'website/base.html' %}
 
-{% block title %}FAQs | Lead Arena{% endblock %}
+{% block title %}Frequently Asked Questions | AURESAN INTERNATIONAL LIMITED{% endblock %}
 
 {% block content %}
-<div class="page-banner" style="max-width:900px; margin:0 auto;">
-    <h1>Frequently Asked Questions</h1>
-    {% for faq in faqs %}
-        <div style="margin-top:1rem;">
-            <strong>{{ faq.question }}</strong>
-            <p>{{ faq.answer }}</p>
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-9">
+            <div class="card border-0 shadow-lg rounded-4 p-4 p-md-5 bg-white">
+                <div class="text-center mb-5">
+                    <span class="badge rounded-pill px-3 py-2 fw-bold text-dark mb-2" style="background: #f59e0b;">HELP CENTER</span>
+                    <h1 class="display-5 fw-extrabold text-dark">Frequently Asked Questions</h1>
+                    <p class="text-muted">Find answers to common questions about AURESAN INTERNATIONAL LIMITED products and delivery.</p>
+                </div>
+
+                {% for faq in faqs %}
+                    <div class="mb-4 p-3 rounded-3 bg-light">
+                        <h5 class="fw-bold text-success mb-2"><i class="fas fa-circle-question me-2"></i>{{ faq.question }}</h5>
+                        <p class="text-secondary mb-0 ms-4">{{ faq.answer }}</p>
+                    </div>
+                {% empty %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-clipboard-question fa-3x text-muted mb-3"></i>
+                        <p class="text-muted">No FAQs published yet. Please contact our support team for immediate assistance.</p>
+                        <a href="{% url 'website:contact' %}" class="btn btn-brand-primary rounded-pill px-4">Contact Support</a>
+                    </div>
+                {% endfor %}
+            </div>
         </div>
-    {% empty %}
-        <p>No FAQs have been added yet.</p>
-    {% endfor %}
+    </div>
 </div>
 {% endblock %}
+

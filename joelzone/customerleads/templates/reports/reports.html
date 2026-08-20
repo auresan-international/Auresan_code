@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% load static humanize %}
+
+{% block title %}Reports - CRM{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <h2 class="mb-0 section-title">Reports</h2>
+        <a href="{% url 'analytics' %}" class="btn btn-outline-primary px-4">
+            <i class="fas fa-chart-bar me-2"></i> Analytics
+        </a>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-md-6 col-xl-3">
+            <a href="{% url 'leads' %}" class="text-decoration-none">
+                <div class="card dashboard-card shadow-custom h-100 p-4 report-tile">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="report-icon bg-primary"><i class="fas fa-users"></i></div>
+                        <div>
+                            <h6 class="mb-0 fw-bold">Lead Reports</h6>
+                            <small class="text-muted">Generation & status overview</small>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-6 col-xl-3">
+            <a href="{% url 'sales_pipeline' %}" class="text-decoration-none">
+                <div class="card dashboard-card shadow-custom h-100 p-4 report-tile">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="report-icon bg-success"><i class="fas fa-funnel-dollar"></i></div>
+                        <div>
+                            <h6 class="mb-0 fw-bold">Sales Reports</h6>
+                            <small class="text-muted">Pipeline & revenue</small>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-6 col-xl-3">
+            <a href="{% url 'interactions' %}" class="text-decoration-none">
+                <div class="card dashboard-card shadow-custom h-100 p-4 report-tile">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="report-icon bg-info"><i class="fas fa-comments"></i></div>
+                        <div>
+                            <h6 class="mb-0 fw-bold">Communication Reports</h6>
+                            <small class="text-muted">Calls, emails & meetings</small>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+
+        <div class="col-md-6 col-xl-3">
+            <a href="{% url 'clients' %}" class="text-decoration-none">
+                <div class="card dashboard-card shadow-custom h-100 p-4 report-tile">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="report-icon bg-warning"><i class="fas fa-user-tie"></i></div>
+                        <div>
+                            <h6 class="mb-0 fw-bold">Client Reports</h6>
+                            <small class="text-muted">Retention & value</small>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+
+    <div class="card dashboard-card shadow-custom mt-4">
+        <div class="card-body text-center py-5">
+            <i class="fas fa-file-export fa-3x text-muted opacity-50 mb-3"></i>
+            <h5 class="fw-bold">Export & Scheduled Reports</h5>
+            <p class="text-muted mb-4">Generate downloadable reports (CSV / PDF) or schedule automated deliveries.</p>
+            <div class="d-flex justify-content-center gap-2 flex-wrap">
+                <button class="btn btn-outline-primary px-4"><i class="fas fa-file-csv me-2"></i>Export Leads (CSV)</button>
+                <button class="btn btn-outline-success px-4"><i class="fas fa-file-pdf me-2"></i>Export Sales (PDF)</button>
+                <button class="btn btn-outline-secondary px-4"><i class="fas fa-clock me-2"></i>Schedule Report</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .report-tile { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+    .report-tile:hover { transform: translateY(-4px); }
+    .report-icon { width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: #fff; font-size: 1.2rem; }
+</style>
+{% endblock %}

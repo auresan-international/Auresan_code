@@ -1,10 +1,18 @@
 {% extends 'website/base.html' %}
 
-{% block title %}{{ post.title }} | Lead Arena{% endblock %}
+{% block title %}{{ post.title }} | AURESAN INTERNATIONAL LIMITED{% endblock %}
 
 {% block content %}
-<div class="page-banner" style="max-width:900px; margin:0 auto;">
-    <h1>{{ post.title }}</h1>
-    <div>{{ post.body|linebreaks }}</div>
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-9">
+            <div class="card border-0 shadow-lg rounded-4 p-4 p-md-5 bg-white">
+                <span class="badge rounded-pill px-3 py-2 fw-bold text-dark mb-3 d-inline-block" style="background: #f59e0b; width: fit-content;">HEALTH ARTICLE</span>
+                <h1 class="display-6 fw-extrabold text-dark mb-4">{{ post.title }}</h1>
+                <div class="text-secondary leading-relaxed fs-6">{{ post.body|linebreaks }}</div>
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}
+

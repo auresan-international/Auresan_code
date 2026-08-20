@@ -1,40 +1,96 @@
 {% extends 'website/base.html' %}
+{% load static %}
 
-{% block title %}{{ product.title }} | Lead Arena{% endblock %}
+{% block title %}{{ product.title }} | AURESAN INTERNATIONAL LIMITED{% endblock %}
 
 {% block content %}
-<div class="page-banner" style="max-width:900px; margin:0 auto;">
-    <h1>{{ product.title }}</h1>
-    <p style="color:#64748b;">{{ product.short_description }}</p>
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card border-0 shadow-lg rounded-4 overflow-hidden p-4 p-md-5 bg-white">
+                <div class="row g-5 align-items-center">
+                    <div class="col-lg-6 text-center">
+                        <div class="p-3 bg-light rounded-4 border">
+                            {% if "immunity" in product.slug %}
+                                <img src="{% static 'website/assets/immunity_booster.png' %}" class="img-fluid rounded-3" alt="{{ product.title }}">
+                            {% elif "metabolic" in product.slug or "sugar" in product.slug %}
+                                <img src="{% static 'website/assets/metabolic_balance.png' %}" class="img-fluid rounded-3" alt="{{ product.title }}">
+                            {% elif "vitality" in product.slug or "energy" in product.slug %}
+                                <img src="{% static 'website/assets/vitality_complex.png' %}" class="img-fluid rounded-3" alt="{{ product.title }}">
+                            {% else %}
+                                <img src="{% static 'website/assets/hero_supplement.png' %}" class="img-fluid rounded-3" alt="{{ product.title }}">
+                            {% endif %}
+                        </div>
+                    </div>
 
-    <h3>Benefits</h3>
-    <div>{{ product.benefits|linebreaks }}</div>
+                    <div class="col-lg-6">
+                        <span class="badge rounded-pill bg-success text-white px-3 py-2 fw-bold mb-2">AURESAN FORMULA</span>
+                        <h2 class="fw-extrabold text-dark mb-2">{{ product.title }}</h2>
+                        <div class="text-warning mb-3">
+                            <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i>
+                            <span class="text-muted ms-2 small">Verified Formula Rating (5.0/5)</span>
+                        </div>
 
-    <h3>Ingredients</h3>
-    <div>{{ product.ingredients|linebreaks }}</div>
+                        <p class="text-secondary mb-4">{{ product.short_description }}</p>
 
-    <h3>Dosage</h3>
-    <div>{{ product.dosage|linebreaks }}</div>
+                        <div class="p-3 bg-light rounded-3 mb-4">
+                            <span class="text-muted small d-block">Official Price</span>
+                            <span class="fw-extrabold text-success display-6">${{ product.price }}</span>
+                        </div>
 
-    <h3>Price</h3>
-    <div><strong>${{ product.price }}</strong></div>
+                        <div class="d-flex gap-3 flex-wrap">
+                            <a href="{% url 'website:home' %}#order-section" class="btn btn-brand-primary btn-lg rounded-pill px-4 fw-bold">
+                                <i class="fas fa-shopping-bag me-2"></i>Order Now
+                            </a>
+                            <a href="{% url 'website:callback' %}" class="btn btn-outline-success btn-lg rounded-pill px-4 fw-semibold">
+                                <i class="fas fa-phone me-2"></i>Request Advice
+                            </a>
+                        </div>
+                    </div>
+                </div>
 
-    <div style="margin-top:1rem; display:flex; gap:0.5rem;">
-        <a href="{% url 'website:order_create' %}" class="btn btn-primary">Order Now</a>
-        <a href="{% url 'website:callback' %}" class="btn btn-outline">Talk to Consultant</a>
-    </div>
+                <hr class="my-5">
 
-    <h3 style="margin-top:1.25rem;">Customer Reviews</h3>
-    {% for r in product.reviews.all %}
-        <div style="border-top:1px solid #f1f5f9; padding:0.75rem 0;">
-            <strong>{{ r.author_name }}</strong> — ★{{ r.rating }}
-            <div style="color:#64748b;">{{ r.text }}</div>
+                <div class="row g-4">
+                    <div class="col-md-4">
+                        <div class="p-4 rounded-3 border h-100">
+                            <h5 class="fw-bold text-success mb-3"><i class="fas fa-bullseye me-2"></i>Benefits</h5>
+                            <div class="text-secondary small">{{ product.benefits|linebreaks }}</div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="p-4 rounded-3 border h-100">
+                            <h5 class="fw-bold text-warning mb-3"><i class="fas fa-flask me-2"></i>Key Ingredients</h5>
+                            <div class="text-secondary small">{{ product.ingredients|linebreaks }}</div>
+                        </div>
+                    </div>
+
+                    <div class="col-md-4">
+                        <div class="p-4 rounded-3 border h-100">
+                            <h5 class="fw-bold text-primary mb-3"><i class="fas fa-prescription-bottle me-2"></i>Suggested Dosage</h5>
+                            <div class="text-secondary small">{{ product.dosage|linebreaks }}</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-5">
+                    <h4 class="fw-bold mb-4">Verified Customer Reviews</h4>
+                    {% for r in product.reviews.all %}
+                        <div class="border-bottom py-3">
+                            <div class="d-flex align-items-center justify-content-between mb-1">
+                                <strong class="text-dark">{{ r.author_name }}</strong>
+                                <span class="text-warning small"><i class="fas fa-star me-1"></i>{{ r.rating }}.0</span>
+                            </div>
+                            <p class="text-muted small mb-0">{{ r.text }}</p>
+                        </div>
+                    {% empty %}
+                        <p class="text-muted">No reviews posted yet.</p>
+                    {% endfor %}
+                </div>
+            </div>
         </div>
-    {% empty %}
-        <p>No reviews yet.</p>
-    {% endfor %}
-
-    <h3>FAQs</h3>
-    <div>{{ product.faqs|linebreaks }}</div>
+    </div>
 </div>
 {% endblock %}
+

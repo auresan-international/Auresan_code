@@ -109,7 +109,7 @@
 
                                 <div class="d-flex justify-content-between align-items-center mb-2">
                                     <span class="text-muted small">
-                                        {{ deal.contact.get_full_name|default:deal.contact.email|default:"—" }}
+                                        {{ deal.contact.name|default:deal.contact.email|default:"—" }}
                                     </span>
                                     <span class="badge rounded-pill 
                                         {% if deal.probability >= 80 %}bg-success

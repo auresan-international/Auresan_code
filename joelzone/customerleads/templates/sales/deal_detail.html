@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% load static humanize %}
+
+{% block title %}{{ deal.title }} - Deal Details | AURESAN CRM{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3">
+    <!-- Header & Action Buttons -->
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1">
+                    <li class="breadcrumb-item"><a href="{% url 'sales_pipeline' %}">Pipeline</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ deal.title }}</li>
+                </ol>
+            </nav>
+            <h2 class="h3 fw-bold mb-0 text-dark">{{ deal.title }}</h2>
+            <p class="text-muted small mb-0">Stage: <span class="text-capitalize">{{ deal.get_stage_display }}</span></p>
+        </div>
+
+        <div class="d-flex gap-2">
+            <a href="{% url 'deal_update' deal.pk %}" class="btn btn-outline-primary rounded-pill px-3">
+                <i class="fas fa-edit me-1"></i> Edit Deal
+            </a>
+            <a href="{% url 'sales_pipeline' %}" class="btn btn-light rounded-pill px-3">
+                <i class="fas fa-arrow-left me-1"></i> Back to Pipeline
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Deal Overview -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 mb-4 bg-white">
+                <div class="card-body p-4">
+                    <div class="text-center mb-3">
+                        <span class="badge bg-info rounded-pill px-3 py-2 text-capitalize">{{ deal.get_stage_display }}</span>
+                    </div>
+                    <hr class="my-3">
+                    <div class="text-start">
+                        <p class="mb-2"><strong><i class="fas fa-dollar-sign me-2 text-success"></i>Value:</strong> ${{ deal.value|floatformat:0|intcomma }}</p>
+                        <p class="mb-2"><strong><i class="fas fa-percentage me-2 text-warning"></i>Probability:</strong> {{ deal.probability }}%</p>
+                        <p class="mb-2"><strong><i class="fas fa-calendar me-2 text-primary"></i>Expected Close:</strong> {{ deal.expected_close_date|date:"M d, Y"|default:"Not set" }}</p>
+                        <p class="mb-0"><strong><i class="fas fa-user-tie me-2 text-danger"></i>Owner:</strong> {{ deal.owner.get_full_name|default:"Unassigned" }}</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Contact -->
+            <div class="card border-0 shadow-sm rounded-4 bg-white">
+                <div class="card-header bg-white border-bottom py-3 px-4">
+                    <h6 class="fw-bold mb-0"><i class="fas fa-user me-2 text-primary"></i>Contact / Lead</h6>
+                </div>
+                <div class="card-body p-4">
+                    {% if deal.contact %}
+                    <p class="mb-1"><strong>
+                        <a href="{% url 'lead_detail' deal.contact.pk %}" class="text-dark text-decoration-none">
+                            {{ deal.contact.name }}
+                        </a>
+                    </strong></p>
+                    <p class="mb-1 text-muted small">{{ deal.contact.company|default:"" }}</p>
+                    <p class="mb-0 text-muted small">{{ deal.contact.email|default:"" }}</p>
+                    {% else %}
+                    <p class="text-muted mb-0 small">No associated lead.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Notes -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4 bg-white h-100">
+                <div class="card-header bg-white border-bottom py-3 px-4">
+                    <h6 class="fw-bold mb-0"><i class="fas fa-sticky-note me-2 text-warning"></i>Deal Notes</h6>
+                </div>
+                <div class="card-body p-4">
+                    <p class="text-secondary small mb-0">{{ deal.notes|default:"No notes added for this deal yet." }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
