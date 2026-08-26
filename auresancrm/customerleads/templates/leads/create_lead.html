@@ -1,0 +1,225 @@
+{% load humanize %}
+
+{% block content %}
+{% if messages %}
+<div id="django-messages" hx-swap-oob="true" style="position: fixed; top: 20px; right: 20px; z-index: 1050; max-width: 400px;">
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible fade show mb-2" role="alert">
+        {{ message }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close">&times;</button>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+    <h1 style="font-size: 1.6rem; font-weight: 600; margin: 0;">Create New Lead</h1>
+</div>
+
+<style>
+    .order-form-container { max-width: 1100px; margin: 0 auto; }
+    .form-section-card { 
+        background: white; 
+        border-radius: 12px; 
+        border: 1px solid #e5e7eb; 
+        margin-bottom: 1.5rem; 
+        overflow: hidden; 
+    }
+    .section-header { 
+        background: #f8fafc; 
+        padding: 1rem 1.5rem; 
+        border-bottom: 1px solid #e5e7eb; 
+        display: flex; 
+        align-items: center; 
+        gap: 0.75rem; 
+    }
+    .section-header h5 { margin: 0; font-size: 1rem; font-weight: 600; color: #1e293b; }
+    .section-body { padding: 1.5rem; }
+
+    .field-label { 
+        display: block; 
+        font-size: 0.85rem; 
+        font-weight: 500; 
+        color: #64748b; 
+        margin-bottom: 0.4rem; 
+    }
+    .errorlist { color: #dc2626; font-size: 0.85rem; margin-top: 0.25rem; }
+
+    .custom-input-group { display: flex; gap: 0.5rem; }
+    .refresh-btn { 
+        background: #f1f5f9; 
+        border: 1px solid #e2e8f0; 
+        border-radius: 6px; 
+        padding: 0.5rem; 
+        cursor: pointer; 
+        color: #64748b; 
+    }
+    .refresh-btn:hover { background: #e2e8f0; }
+</style>
+
+<div class="order-form-container">
+    {% if form.errors %}
+    <div class="alert alert-danger">
+        <strong>Please correct the errors below:</strong>
+        <ul>
+            {% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}
+            {% for field in form %}
+                {% for error in field.errors %}<li>{{ field.label }}: {{ error }}</li>{% endfor %}
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+
+    <form method="post" hx-post="{% url 'create_lead' %}" hx-target="#main-content">
+        {% csrf_token %}
+
+        <!-- Main Order Information -->
+        <div class="form-section-card">
+            <div class="section-header">
+                <i class="fas fa-shopping-cart" style="color: #3b82f6;"></i>
+                <h5>Main Order Information</h5>
+            </div>
+            <div class="section-body">
+                <div style="display: grid; grid-template-columns: repeat(12, 1fr); gap: 1rem;">
+
+                    <div style="grid-column: span 3;">
+                        <label class="field-label">Status</label>
+                        {{ form.status }}
+                    </div>
+                    <div style="grid-column: span 3;">
+                        <label class="field-label">Priority</label>
+                        {{ form.priority }}
+                    </div>
+                    <div style="grid-column: span 3;">
+                        <label class="field-label">Source</label>
+                        {{ form.source }}
+                    </div>
+                    <div style="grid-column: span 3;">
+                        <label class="field-label">Quantity</label>
+                        {{ form.quantity }}
+                    </div>
+
+                    <div style="grid-column: span 4;">
+                        <label class="field-label">Total</label>
+                        {{ form.total }}
+                    </div>
+                    <div style="grid-column: span 4;">
+                        <label class="field-label">Russian Post Track</label>
+                        {{ form.russian_post_track }}
+                    </div>
+                    <div style="grid-column: span 4;">
+                        <label class="field-label">Delivery Time</label>
+                        {{ form.delivery_time }}
+                    </div>
+
+                    <div style="grid-column: span 3;">
+                        <label class="field-label">Index</label>
+                        {{ form.index }}
+                    </div>
+                    <div style="grid-column: span 3;">
+                        <label class="field-label">Region</label>
+                        <div class="custom-input-group">
+                            {{ form.region }}
+                            <button type="button" class="refresh-btn"><i class="fas fa-sync-alt"></i></button>
+                        </div>
+                    </div>
+                    <div style="grid-column: span 3;">
+                        <label class="field-label">City</label>
+                        <div class="custom-input-group">
+                            {{ form.city }}
+                            <button type="button" class="refresh-btn"><i class="fas fa-sync-alt"></i></button>
+                        </div>
+                    </div>
+                    <div style="grid-column: span 3;">
+                        <label class="field-label">District</label>
+                        {{ form.district }}
+                    </div>
+
+                    <div style="grid-column: span 12;">
+                        <label class="field-label">Address</label>
+                        {{ form.address }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Customer Details -->
+        <div class="form-section-card" style="border-left: 4px solid #3b82f6;">
+            <div class="section-header">
+                <i class="fas fa-user-tag" style="color: #3b82f6;"></i>
+                <h5>Customer Details</h5>
+            </div>
+            <div class="section-body">
+                <div style="display: grid; grid-template-columns: repeat(12, 1fr); gap: 1rem;">
+                    <div style="grid-column: span 6;">
+                        <label class="field-label">Full Name</label>
+                        {{ form.name }}
+                    </div>
+                    <div style="grid-column: span 6;">
+                        <label class="field-label">Company</label>
+                        {{ form.company }}
+                    </div>
+
+                    <div style="grid-column: span 3;">
+                        <label class="field-label">Gender</label>
+                        {{ form.sex }}
+                    </div>
+                    <div style="grid-column: span 3;">
+                        <label class="field-label">Age</label>
+                        {{ form.age }}
+                    </div>
+                    <div style="grid-column: span 3;">
+                        <label class="field-label">Phone</label>
+                        {{ form.phone }}
+                    </div>
+                    <div style="grid-column: span 3;">
+                        <label class="field-label">Email</label>
+                        {{ form.email }}
+                    </div>
+
+                    <div style="grid-column: span 12;">
+                        <label class="field-label">Comment</label>
+                        {{ form.comment }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Status & Feedback -->
+        <div class="form-section-card">
+            <div class="section-header">
+                <i class="fas fa-comment-slash" style="color: #ef4444;"></i>
+                <h5>Status & Feedback</h5>
+            </div>
+            <div class="section-body">
+                <div style="display: grid; grid-template-columns: repeat(12, 1fr); gap: 1rem;">
+                    <div style="grid-column: span 4;">
+                        <label class="field-label">Cancellation Reason</label>
+                        {{ form.cancellation_reason }}
+                    </div>
+                    <div style="grid-column: span 4;">
+                        <label class="field-label">Return Reason</label>
+                        {{ form.return_reason }}
+                    </div>
+                    <div style="grid-column: span 4;">
+                        <label class="field-label">Spam Reason</label>
+                        {{ form.spam_reason }}
+                    </div>
+
+                    <div style="grid-column: span 12;">
+                        <label class="field-label">Additional Field #14</label>
+                        {{ form.additional_field_14 }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 2rem;">
+            <a href="{% url 'leads' %}" class="btn btn-secondary">Cancel</a>
+            <button type="submit" class="btn btn-success btn-lg">
+                Create Lead
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

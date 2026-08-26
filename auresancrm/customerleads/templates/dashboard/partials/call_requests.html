@@ -1,0 +1,261 @@
+{% load humanize %}
+
+<div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+    <div>
+        <h2 class="h4 fw-bold mb-1 text-dark"><i class="fas fa-phone-arrow-down-left text-emerald me-2" style="color: #059669;"></i>Customer Call Requests</h2>
+        <p class="text-muted small mb-0">Manage incoming web callback requests, contact clients, and track resolutions.</p>
+    </div>
+</div>
+
+{% if message %}
+<div class="alert alert-success alert-dismissible fade show rounded-3 shadow-sm mb-4" role="alert">
+    <i class="fas fa-check-circle me-2"></i>{{ message }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+{% endif %}
+
+<!-- Metrics Summary Row -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm rounded-4 p-3 bg-white">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="text-muted small fw-semibold text-uppercase">Total Requests</span>
+                    <h3 class="fw-bold mb-0 text-dark mt-1">{{ total_count|default:"0" }}</h3>
+                </div>
+                <div class="rounded-circle p-3 text-primary bg-primary bg-opacity-10">
+                    <i class="fas fa-headset fa-xl"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm rounded-4 p-3 bg-white">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="text-muted small fw-semibold text-uppercase text-warning">New (Pending)</span>
+                    <h3 class="fw-bold mb-0 text-warning mt-1">{{ new_count|default:"0" }}</h3>
+                </div>
+                <div class="rounded-circle p-3 text-warning bg-warning bg-opacity-10">
+                    <i class="fas fa-bell fa-xl"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm rounded-4 p-3 bg-white">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="text-muted small fw-semibold text-uppercase text-info">Contacted</span>
+                    <h3 class="fw-bold mb-0 text-info mt-1">{{ contacted_count|default:"0" }}</h3>
+                </div>
+                <div class="rounded-circle p-3 text-info bg-info bg-opacity-10">
+                    <i class="fas fa-phone-volume fa-xl"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-6 col-md-3">
+        <div class="card border-0 shadow-sm rounded-4 p-3 bg-white">
+            <div class="d-flex align-items-center justify-content-between">
+                <div>
+                    <span class="text-muted small fw-semibold text-uppercase text-success">Resolved</span>
+                    <h3 class="fw-bold mb-0 text-success mt-1">{{ resolved_count|default:"0" }}</h3>
+                </div>
+                <div class="rounded-circle p-3 text-success bg-success bg-opacity-10">
+                    <i class="fas fa-circle-check fa-xl"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Table Card -->
+<div class="card border-0 shadow-sm rounded-4 overflow-hidden bg-white">
+    <div class="card-header bg-white border-bottom py-3 px-4 d-flex justify-content-between align-items-center flex-wrap gap-3">
+        <div class="d-flex align-items-center gap-2">
+            <h5 class="fw-bold mb-0 text-dark" style="font-size: 1.05rem;">Request Queue</h5>
+            <span class="badge bg-light text-dark fw-normal rounded-pill px-3 py-2">
+                {{ call_requests.count }} items
+            </span>
+        </div>
+
+        <!-- Filter & Search Controls -->
+        <div class="d-flex align-items-center gap-2">
+            <input type="text" class="form-control form-control-sm bg-light border-0 rounded-pill px-3" id="cb_search_input" onkeyup="filterCallRequestsTable()" placeholder="Search name, phone, district..." style="width: 240px;">
+        </div>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0" id="cb_requests_table">
+            <thead class="bg-light text-muted small text-uppercase">
+                <tr>
+                    <th class="ps-4">Customer Name</th>
+                    <th>Phone Number</th>
+                    <th>District</th>
+                    <th>Product Interest</th>
+                    <th>Preferred Time</th>
+                    <th>Status</th>
+                    <th>Requested</th>
+                    <th class="pe-4 text-end">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cb in call_requests %}
+                <tr>
+                    <td class="ps-4">
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="avatar-circle rounded-circle bg-emerald bg-opacity-10 text-emerald fw-bold d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; color: #059669; background: #dcfce7;">
+                                {{ cb.full_name|slice:":2"|upper }}
+                            </div>
+                            <div>
+                                <strong class="text-dark d-block mb-0">{{ cb.full_name }}</strong>
+                                {% if cb.message %}
+                                <span class="text-muted small d-inline-block text-truncate" style="max-width: 180px;" title="{{ cb.message }}">
+                                    <i class="far fa-comment-alt me-1"></i>{{ cb.message }}
+                                </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </td>
+
+                    <td>
+                        <a href="tel:{{ cb.phone_number }}" class="fw-bold text-dark text-decoration-none font-monospace">
+                            <i class="fas fa-phone me-1 text-success small"></i>{{ cb.phone_number }}
+                        </a>
+                    </td>
+
+                    <td>
+                        {% if cb.district %}
+                        <span class="badge bg-light text-dark fw-semibold rounded-pill px-3 py-2 border">
+                            <i class="fas fa-location-dot text-danger me-1"></i>{{ cb.district }}
+                        </span>
+                        {% else %}
+                        <span class="text-muted small">—</span>
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        {% if cb.interest %}
+                        <span class="badge bg-success bg-opacity-10 text-success fw-semibold rounded-pill px-3 py-2">
+                            <i class="fas fa-capsules me-1"></i>{{ cb.interest|truncatechars:28 }}
+                        </span>
+                        {% else %}
+                        <span class="text-muted small">General Inquiry</span>
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        {% if cb.best_time %}
+                        <span class="badge bg-warning bg-opacity-10 text-dark fw-semibold rounded-pill px-3 py-2">
+                            <i class="far fa-clock text-warning me-1"></i>{{ cb.best_time }}
+                        </span>
+                        {% else %}
+                        <span class="text-muted small">Anytime</span>
+                        {% endif %}
+                    </td>
+
+                    <td>
+                        {% if cb.status == 'new' %}
+                            <span class="badge bg-warning text-dark rounded-pill px-3 py-2 fw-bold">
+                                <i class="fas fa-sparkles me-1"></i>New
+                            </span>
+                        {% elif cb.status == 'contacted' %}
+                            <span class="badge bg-info text-white rounded-pill px-3 py-2 fw-semibold">
+                                <i class="fas fa-phone me-1"></i>Contacted
+                            </span>
+                        {% elif cb.status == 'resolved' or cb.status == 'completed' or cb.status == 'confirmed' %}
+                            <span class="badge bg-success text-white rounded-pill px-3 py-2 fw-semibold">
+                                <i class="fas fa-check me-1"></i>Resolved
+                            </span>
+                        {% else %}
+                            <span class="badge bg-secondary text-white rounded-pill px-3 py-2">
+                                {{ cb.status|title }}
+                            </span>
+                        {% endif %}
+                    </td>
+
+                    <td class="text-muted small">
+                        {{ cb.created_at|naturaltime }}
+                    </td>
+
+                    <td class="pe-4 text-end">
+                        <div class="d-inline-flex gap-1 align-items-center">
+                            <!-- Direct Call Button -->
+                            <a href="tel:{{ cb.phone_number }}" class="btn btn-sm btn-success rounded-pill px-3 fw-semibold" title="Call Now">
+                                <i class="fas fa-phone-volume me-1"></i>Call
+                            </a>
+
+                            <!-- Convert to Lead Button -->
+                            <form hx-post="{% url 'convert_callback_to_lead' cb_id=cb.id %}" hx-target="#main-content" hx-swap="innerHTML" class="d-inline">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-outline-warning rounded-pill px-3 fw-semibold" title="Convert to Lead">
+                                    <i class="fas fa-user-plus me-1"></i>Lead
+                                </button>
+                            </form>
+
+                            <!-- Status Dropdown Toggle -->
+                            <div class="dropdown d-inline">
+                                <button class="btn btn-sm btn-light rounded-circle border-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fas fa-ellipsis-v text-muted"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end shadow-sm rounded-3 border-0">
+                                    <li>
+                                        <form hx-post="{% url 'update_callback_status' cb_id=cb.id %}" hx-target="#main-content" hx-swap="innerHTML">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="status" value="contacted">
+                                            <button type="submit" class="dropdown-item small"><i class="fas fa-phone-volume me-2 text-info"></i>Mark as Contacted</button>
+                                        </form>
+                                    </li>
+                                    <li>
+                                        <form hx-post="{% url 'update_callback_status' cb_id=cb.id %}" hx-target="#main-content" hx-swap="innerHTML">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="status" value="resolved">
+                                            <button type="submit" class="dropdown-item small"><i class="fas fa-check-circle me-2 text-success"></i>Mark as Resolved</button>
+                                        </form>
+                                    </li>
+                                    <li>
+                                        <form hx-post="{% url 'update_callback_status' cb_id=cb.id %}" hx-target="#main-content" hx-swap="innerHTML">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="status" value="new">
+                                            <button type="submit" class="dropdown-item small"><i class="fas fa-undo me-2 text-warning"></i>Reset to New</button>
+                                        </form>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="8" class="text-center py-5 text-muted">
+                        <i class="fas fa-folder-open fa-3x text-muted mb-3 opacity-50"></i>
+                        <p class="fw-semibold mb-0">No callback requests found.</p>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+function filterCallRequestsTable() {
+    const input = document.getElementById('cb_search_input');
+    const filter = input.value.toUpperCase();
+    const table = document.getElementById('cb_requests_table');
+    const tr = table.getElementsByTagName('tr');
+
+    for (let i = 1; i < tr.length; i++) {
+        let txtValue = tr[i].textContent || tr[i].innerText;
+        if (txtValue.toUpperCase().indexOf(filter) > -1) {
+            tr[i].style.display = "";
+        } else {
+            tr[i].style.display = "none";
+        }
+    }
+}
+</script>

@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+{% load static humanize %}
+
+{% block title %}Activity History - CRM{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <h2 class="mb-0 section-title">Activity History</h2>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-secondary px-3"><i class="fas fa-filter me-1"></i> Filters</button>
+            <button class="btn btn-outline-primary px-3"><i class="fas fa-download me-1"></i> Export</button>
+        </div>
+    </div>
+
+    <div class="card dashboard-card shadow-custom">
+        <div class="card-body p-0">
+            <div class="timeline-container p-4">
+                {% if activities %}
+                <ul class="list-group list-group-flush">
+                    {% for activity in activities %}
+                    <li class="list-group-item px-0 border-0">
+                        <div class="d-flex gap-3">
+                            <div class="activity-dot bg-primary"></div>
+                            <div>
+                                <p class="mb-0 fw-semibold">{{ activity.message|default:activity }}</p>
+                                <small class="text-muted">{{ activity.timestamp|naturaltime|default:"" }}</small>
+                            </div>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <div class="text-center py-5 text-muted">
+                    <i class="fas fa-history fa-4x mb-3 opacity-50"></i>
+                    <p class="lead mb-1">No activity recorded yet.</p>
+                    <p class="small">System events such as logins, lead changes, and user actions will appear here.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .activity-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; margin-top: 6px; }
+</style>
+{% endblock %}

@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}AURESAN INTERNATIONAL LIMITED | Natural Health & Wellness Supplements{% endblock %}</title>
+    <!-- Google Fonts: Plus Jakarta Sans & Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Bootstrap 5.3 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome 6 -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    
+    <style>
+        :root {
+            --brand-primary: #059669;
+            --brand-primary-dark: #047857;
+            --brand-gold: #d97706;
+            --brand-gold-light: #fef3c7;
+            --bg-light: #f8fafc;
+            --text-dark: #0f172a;
+            --text-muted: #64748b;
+        }
+
+        body { 
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background: var(--bg-light); 
+            color: var(--text-dark); 
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        h1, h2, h3, h4, h5, h6, .brand-font {
+            font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+        }
+
+        main { flex: 1; }
+
+        /* Top Notification Bar */
+        .top-bar {
+            background: #022c22;
+            color: #a7f3d0;
+            font-size: 0.85rem;
+            padding: 0.4rem 0;
+        }
+
+        /* Navbar Enhancements */
+        .site-header { 
+            background: #ffffff; 
+            box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+            border-bottom: 1px solid #e2e8f0; 
+        }
+        
+        .navbar-brand img {
+            height: 48px;
+            width: auto;
+            object-fit: contain;
+        }
+
+        .navbar-nav .nav-link { 
+            color: #334155 !important; 
+            font-weight: 600;
+            font-size: 0.95rem;
+            padding: 0.5rem 1rem;
+            transition: all 0.2s ease-in-out;
+        }
+
+        .navbar-nav .nav-link:hover,
+        .navbar-nav .nav-link.active { 
+            color: var(--brand-primary) !important; 
+        }
+
+        .btn-brand-primary {
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
+            color: #ffffff;
+            border: none;
+            box-shadow: 0 4px 14px rgba(5, 150, 105, 0.35);
+            transition: all 0.3s ease;
+        }
+        .btn-brand-primary:hover {
+            background: linear-gradient(135deg, #047857 0%, #065f46 100%);
+            color: #ffffff;
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(5, 150, 105, 0.45);
+        }
+
+        .btn-brand-gold {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: #ffffff;
+            border: none;
+            box-shadow: 0 4px 14px rgba(217, 119, 6, 0.35);
+            transition: all 0.3s ease;
+        }
+        .btn-brand-gold:hover {
+            background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+            color: #ffffff;
+            transform: translateY(-1px);
+        }
+
+        /* Footer Enhancements */
+        .site-footer { 
+            background: #022c22; 
+            color: #94a3b8; 
+            font-size: 0.925rem;
+        }
+
+        .site-footer h5, 
+        .site-footer h6 { 
+            color: #f8fafc; 
+            font-weight: 700;
+        }
+
+        .site-footer a { 
+            color: #cbd5e1; 
+            text-decoration: none; 
+            transition: color 0.2s ease-in-out;
+        }
+
+        .site-footer a:hover { 
+            color: #34d399; 
+        }
+
+        .footer-bottom {
+            border-top: 1px solid #064e3b;
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+    <!-- TOP INFORMATIONAL BAR -->
+    <div class="top-bar d-none d-md-block">
+        <div class="container d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center gap-3">
+                <span><i class="fa-solid fa-shield-halved me-1 text-warning"></i> 100% Certified Natural Formulas</span>
+                <span class="text-white-50">|</span>
+                <span><i class="fa-solid fa-truck-fast me-1 text-emerald"></i> Express Delivery Nationwide</span>
+            </div>
+            <div class="d-flex align-items-center gap-3">
+                <a href="tel:+256700000000" class="text-emerald text-decoration-none"><i class="fa-solid fa-phone me-1"></i> Helpline: +256 700 000000</a>
+                <span class="text-white-50">|</span>
+                <a href="mailto:info@auresan.com" class="text-emerald text-decoration-none"><i class="fa-solid fa-envelope me-1"></i> info@auresan.com</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- NAVBAR START -->
+    <header class="site-header sticky-top">
+        <nav class="navbar navbar-expand-lg py-2">
+            <div class="container">
+                <!-- Brand / Logo -->
+                <a class="navbar-brand d-flex align-items-center gap-2" href="{% url 'website:home' %}">
+                    <img src="{% static 'website/assets/logo.svg' %}" alt="AURESAN INTERNATIONAL LIMITED" class="img-fluid">
+                </a>
+
+                <!-- Mobile Toggle Button -->
+                <button class="navbar-toggler border-0 shadow-none p-2" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar" aria-controls="mainNavbar" aria-expanded="false" aria-label="Toggle navigation">
+                    <i class="fa-solid fa-bars fa-lg text-emerald"></i>
+                </button>
+
+                <!-- Nav Items -->
+                <div class="collapse navbar-collapse" id="mainNavbar">
+                    <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-2 py-3 py-lg-0">
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'website:home' %}">Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'website:about' %}">About Us</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'website:product_list' %}">Products</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'website:faqs' %}">FAQs</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'website:blog_list' %}">Health Blog</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'website:contact' %}">Contact</a>
+                        </li>
+                        <!-- Call to Action Button -->
+                        <li class="nav-item ms-lg-2 mt-2 mt-lg-0">
+                            <a class="btn btn-brand-primary rounded-pill px-4 py-2 btn-sm fw-semibold w-100" href="#order-section">
+                                <i class="fa-solid fa-bag-shopping me-1"></i> Order Now
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    </header>
+    <!-- NAVBAR END -->
+
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- FOOTER START -->
+    <footer class="site-footer pt-5 pb-4 mt-auto">
+        <div class="container">
+            <div class="row g-4 pb-4">
+                <!-- Brand Info -->
+                <div class="col-lg-4 col-md-6">
+                    <div class="mb-3">
+                        <img src="{% static 'website/assets/logo.svg' %}" alt="AURESAN INTERNATIONAL LIMITED" style="height: 52px; filter: brightness(0) invert(1);">
+                    </div>
+                    <p class="pe-lg-3 text-light opacity-75">
+                        <strong>AURESAN INTERNATIONAL LIMITED</strong> is a global leader in premium natural health supplements, scientifically formulated for cellular immunity, metabolic balance, and holistic vitality.
+                    </p>
+                    <div class="d-flex gap-3 fs-5 mt-3">
+                        <a href="#" aria-label="Facebook"><i class="fa-brands fa-facebook"></i></a>
+                        <a href="#" aria-label="X (Twitter)"><i class="fa-brands fa-x-twitter"></i></a>
+                        <a href="#" aria-label="Instagram"><i class="fa-brands fa-instagram"></i></a>
+                        <a href="#" aria-label="LinkedIn"><i class="fa-brands fa-linkedin"></i></a>
+                    </div>
+                </div>
+
+                <!-- Quick Links -->
+                <div class="col-lg-2 col-md-6 col-6">
+                    <h6 class="mb-3 text-uppercase text-gold" style="color: #f59e0b; letter-spacing: 1px;">Navigation</h6>
+                    <ul class="list-unstyled d-flex flex-column gap-2 mb-0">
+                        <li><a href="{% url 'website:home' %}">Home</a></li>
+                        <li><a href="{% url 'website:about' %}">About AURESAN</a></li>
+                        <li><a href="{% url 'website:product_list' %}">Supplement Range</a></li>
+                        <li><a href="{% url 'website:blog_list' %}">Health Articles</a></li>
+                        <li><a href="{% url 'website:contact' %}">Contact Us</a></li>
+                    </ul>
+                </div>
+
+                <!-- Product Categories -->
+                <div class="col-lg-3 col-md-6 col-6">
+                    <h6 class="mb-3 text-uppercase text-gold" style="color: #f59e0b; letter-spacing: 1px;">Solutions</h6>
+                    <ul class="list-unstyled d-flex flex-column gap-2 mb-0">
+                        <li><a href="#">Immunity & Defense</a></li>
+                        <li><a href="#">Metabolic & Glucose Support</a></li>
+                        <li><a href="#">Active Energy & Stamina</a></li>
+                        <li><a href="#">Radiance & Antioxidants</a></li>
+                    </ul>
+                </div>
+
+                <!-- Contact Details -->
+                <div class="col-lg-3 col-md-6">
+                    <h6 class="mb-3 text-uppercase text-gold" style="color: #f59e0b; letter-spacing: 1px;">Headquarters</h6>
+                    <ul class="list-unstyled d-flex flex-column gap-2 mb-0 text-light opacity-75">
+                        <li class="d-flex align-items-start gap-2">
+                            <i class="fa-solid fa-location-dot text-emerald mt-1" style="color: #34d399;"></i>
+                            <span>AURESAN INTERNATIONAL LIMITED Plaza, Plot 14, Commercial District</span>
+                        </li>
+                        <li class="d-flex align-items-center gap-2">
+                            <i class="fa-solid fa-phone text-emerald" style="color: #34d399;"></i>
+                            <span>+256 700 000000 / +256 770 000000</span>
+                        </li>
+                        <li class="d-flex align-items-center gap-2">
+                            <i class="fa-solid fa-envelope text-emerald" style="color: #34d399;"></i>
+                            <span>support@auresan.com</span>
+                        </li>
+                        <li class="d-flex align-items-center gap-2">
+                            <i class="fa-solid fa-clock text-emerald" style="color: #34d399;"></i>
+                            <span>Mon - Sat: 8:00 AM - 7:00 PM</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Bottom Copyright Bar -->
+            <div class="footer-bottom pt-4 text-center text-md-between d-flex flex-column flex-md-row justify-content-between align-items-center gap-2">
+                <p class="mb-0 small text-white-50">&copy; {% now "Y" %} <strong>AURESAN INTERNATIONAL LIMITED</strong>. All rights reserved.</p>
+                <div class="d-flex align-items-center gap-3 small">
+                    <a href="#">Privacy Policy</a>
+                    <a href="#">Terms & Conditions</a>
+                    <span class="text-white-50">|</span>
+
+                    <!-- Staff Portal Link -->
+                    <a href="{% url 'login' %}" class="text-white-50 hover-text-white d-inline-flex align-items-center gap-1">
+                        <i class="fa-solid fa-user-gear fa-xs"></i> Staff Portal
+                    </a>
+                </div>
+            </div>
+        </div>
+    </footer>
+    <!-- FOOTER END -->
+
+    <!-- Bootstrap 5.3 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

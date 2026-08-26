@@ -1,0 +1,107 @@
+{% extends 'website/base.html' %}
+{% load static %}
+
+{% block title %}Contact Us | AURESAN INTERNATIONAL LIMITED{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card border-0 shadow-lg rounded-4 overflow-hidden bg-white p-4 p-md-5">
+                <div class="text-center mb-5">
+                    <span class="badge rounded-pill px-3 py-2 fw-bold text-dark mb-2" style="background: #f59e0b;">CUSTOMER SUPPORT</span>
+                    <h1 class="display-5 fw-extrabold text-dark">Contact AURESAN INTERNATIONAL LIMITED</h1>
+                    <p class="lead text-muted">We are here to assist you with order inquiries, product guidance, and corporate support.</p>
+                </div>
+
+                {% if messages %}
+                    {% for message in messages %}
+                        <div class="alert alert-success rounded-3 mb-4">
+                            <i class="fas fa-check-circle me-2"></i>{{ message }}
+                        </div>
+                    {% endfor %}
+                {% endif %}
+
+                <div class="row g-5">
+                    <div class="col-lg-5">
+                        <div class="p-4 rounded-4 text-white" style="background: linear-gradient(135deg, #022c22 0%, #059669 100%);">
+                            <h4 class="fw-bold mb-4">Get in Touch</h4>
+                            
+                            <div class="d-flex align-items-start gap-3 mb-4">
+                                <div class="rounded-circle p-2 text-warning" style="background: rgba(255,255,255,0.15);">
+                                    <i class="fas fa-location-dot fa-lg"></i>
+                                </div>
+                                <div>
+                                    <h6 class="fw-bold mb-1">Corporate Headquarters</h6>
+                                    <p class="small text-light opacity-90 mb-0">AURESAN INTERNATIONAL LIMITED Plaza, Plot 14 Commercial District</p>
+                                </div>
+                            </div>
+
+                            <div class="d-flex align-items-start gap-3 mb-4">
+                                <div class="rounded-circle p-2 text-warning" style="background: rgba(255,255,255,0.15);">
+                                    <i class="fas fa-phone fa-lg"></i>
+                                </div>
+                                <div>
+                                    <h6 class="fw-bold mb-1">Phone & WhatsApp</h6>
+                                    <p class="small text-light opacity-90 mb-0">+256 700 000000 / +256 770 000000</p>
+                                </div>
+                            </div>
+
+                            <div class="d-flex align-items-start gap-3 mb-4">
+                                <div class="rounded-circle p-2 text-warning" style="background: rgba(255,255,255,0.15);">
+                                    <i class="fas fa-envelope fa-lg"></i>
+                                </div>
+                                <div>
+                                    <h6 class="fw-bold mb-1">Email Inquiry</h6>
+                                    <p class="small text-light opacity-90 mb-0">support@auresan.com / info@auresan.com</p>
+                                </div>
+                            </div>
+
+                            <div class="d-flex align-items-start gap-3">
+                                <div class="rounded-circle p-2 text-warning" style="background: rgba(255,255,255,0.15);">
+                                    <i class="fas fa-clock fa-lg"></i>
+                                </div>
+                                <div>
+                                    <h6 class="fw-bold mb-1">Business Hours</h6>
+                                    <p class="small text-light opacity-90 mb-0">Mon - Sat: 8:00 AM - 7:00 PM</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="col-lg-7">
+                        <h4 class="fw-bold text-dark mb-4">Send Us a Direct Message</h4>
+                        <form method="POST">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">Full Name</label>
+                                <input type="text" name="name" class="form-control bg-light" required placeholder="Your full name">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">Email Address</label>
+                                <input type="email" name="email" class="form-control bg-light" required placeholder="your.email@example.com">
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small">Subject</label>
+                                <input type="text" name="subject" class="form-control bg-light" placeholder="e.g. Order Status, Product Inquiry">
+                            </div>
+
+                            <div class="mb-4">
+                                <label class="form-label fw-semibold small">Message</label>
+                                <textarea name="message" rows="5" class="form-control bg-light" required placeholder="How can AURESAN assist you?"></textarea>
+                            </div>
+
+                            <button type="submit" class="btn btn-brand-primary btn-lg w-100 rounded-pill fw-bold">
+                                <i class="fas fa-paper-plane me-2"></i>Send Message
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

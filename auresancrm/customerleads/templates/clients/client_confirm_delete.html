@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% load static humanize %}
+
+{% block title %}Delete Client - CRM{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card dashboard-card shadow-custom">
+                <div class="card-body text-center p-4">
+                    <div class="text-danger mb-3">
+                        <i class="fas fa-exclamation-triangle fa-3x"></i>
+                    </div>
+                    <h4 class="fw-bold mb-3">Delete Client</h4>
+                    <p class="text-muted">Are you sure you want to delete <strong>{{ client.name }}</strong>? This action cannot be undone.</p>
+
+                    <form method="post" class="mt-4">
+                        {% csrf_token %}
+                        <a href="{% url 'clients' %}" class="btn btn-outline-secondary px-4 me-2">Cancel</a>
+                        <button type="submit" class="btn btn-danger px-4">
+                            <i class="fas fa-trash me-2"></i> Delete Client
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

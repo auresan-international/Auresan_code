@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+
+{% block title %}{{ lead.name }} - Lead Details | AURESAN CRM{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-3">
+    <!-- Header & Action Buttons -->
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-3 mb-4">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1">
+                    <li class="breadcrumb-item"><a href="{% url 'leads' %}">Leads</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ lead.name }}</li>
+                </ol>
+            </nav>
+            <h2 class="h3 fw-bold mb-0 text-dark">{{ lead.name }}</h2>
+            <p class="text-muted small mb-0">{{ lead.company|default:"Individual Customer" }} &bull; Source: <span class="text-capitalize">{{ lead.get_source_display }}</span></p>
+        </div>
+
+        <div class="d-flex gap-2">
+            <a href="{% url 'lead_update' pk=lead.pk %}" class="btn btn-outline-primary rounded-pill px-3">
+                <i class="fas fa-edit me-1"></i> Edit Lead
+            </a>
+            {% if lead.status != 'converted' %}
+            <a href="{% url 'convert_lead_to_client' lead_id=lead.id %}" class="btn btn-success rounded-pill px-3 fw-semibold">
+                <i class="fas fa-user-check me-1"></i> Convert to Client
+            </a>
+            {% endif %}
+            <a href="{% url 'leads' %}" class="btn btn-light rounded-pill px-3">
+                <i class="fas fa-arrow-left me-1"></i> Back to List
+            </a>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Overview Card & Contact Info -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm rounded-4 mb-4 bg-white">
+                <div class="card-body p-4 text-center">
+                    <div class="avatar-circle rounded-circle bg-emerald bg-opacity-10 text-success fw-bold d-flex align-items-center justify-content-center mx-auto mb-3" style="width: 72px; height: 72px; font-size: 1.8rem; background: #dcfce7; color: #059669;">
+                        {{ lead.name|slice:":2"|upper }}
+                    </div>
+                    <h5 class="fw-bold text-dark mb-1">{{ lead.name }}</h5>
+                    <p class="text-muted small mb-3">{{ lead.company|default:"No Company Listed" }}</p>
+
+                    <div class="d-flex justify-content-center gap-2 mb-3">
+                        <span class="badge bg-{{ lead.get_status_color }} px-3 py-2 rounded-pill text-uppercase">{{ lead.get_status_display }}</span>
+                        <span class="badge bg-secondary px-3 py-2 rounded-pill text-capitalize">Priority: {{ lead.priority }}</span>
+                    </div>
+
+                    <hr class="my-3">
+
+                    <div class="text-start">
+                        <p class="mb-2"><strong><i class="fas fa-envelope me-2 text-primary"></i>Email:</strong> {{ lead.email|default:"N/A" }}</p>
+                        <p class="mb-2"><strong><i class="fas fa-phone me-2 text-success"></i>Phone:</strong> {{ lead.phone|default:"N/A" }}</p>
+                        <p class="mb-2"><strong><i class="fas fa-map-marker-alt me-2 text-danger"></i>District/City:</strong> {{ lead.city|default:lead.region|default:"Not specified" }}</p>
+                        <p class="mb-2"><strong><i class="fas fa-clock me-2 text-warning"></i>Created:</strong> {{ lead.created_at|date:"M d, Y @ H:i" }}</p>
+                        {% if lead.call_outcome %}
+                        <p class="mb-0"><strong><i class="fas fa-headset me-2 text-info"></i>Call Outcome:</strong> <span class="badge bg-info text-white">{{ lead.get_call_outcome_display }}</span></p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notes Card -->
+            <div class="card border-0 shadow-sm rounded-4 bg-white">
+                <div class="card-header bg-white border-bottom py-3 px-4">
+                    <h6 class="fw-bold mb-0"><i class="fas fa-sticky-note me-2 text-warning"></i>Lead Notes</h6>
+                </div>
+                <div class="card-body p-4">
+                    <p class="text-secondary small mb-0">{{ lead.notes|default:lead.comment|default:"No notes added for this lead yet." }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Interactions & Activity Details -->
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4 mb-4 bg-white">
+                <div class="card-header bg-white border-bottom py-3 px-4 d-flex justify-content-between align-items-center">
+                    <h6 class="fw-bold mb-0"><i class="fas fa-comments me-2 text-primary"></i>Logged Interactions ({{ lead.interactions.count }})</h6>
+                    <a href="{% url 'interaction_create' %}" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                        <i class="fas fa-plus me-1"></i> Log Interaction
+                    </a>
+                </div>
+                <div class="card-body p-0">
+                    <div class="list-group list-group-flush">
+                        {% for interaction in lead.interactions.all %}
+                        <div class="list-group-item p-4 border-bottom">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <span class="badge bg-primary rounded-pill px-3 py-1">{{ interaction.get_interaction_type_display }}</span>
+                                <small class="text-muted">{{ interaction.interaction_date|date:"M d, Y @ H:i" }}</small>
+                            </div>
+                            <p class="mb-1 text-secondary small">{{ interaction.notes }}</p>
+                            <small class="text-muted">Logged by: {{ interaction.created_by.get_full_name }}</small>
+                        </div>
+                        {% empty %}
+                        <div class="text-center py-4 text-muted">
+                            <i class="fas fa-comment-slash fa-2x mb-2 opacity-50"></i>
+                            <p class="mb-0 small">No interactions recorded for this lead.</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Associated Deals -->
+            <div class="card border-0 shadow-sm rounded-4 bg-white">
+                <div class="card-header bg-white border-bottom py-3 px-4">
+                    <h6 class="fw-bold mb-0"><i class="fas fa-briefcase me-2 text-emerald" style="color: #059669;"></i>Deals & Pipeline</h6>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table align-middle mb-0">
+                            <thead class="bg-light small text-uppercase text-muted">
+                                <tr>
+                                    <th class="ps-4">Deal Title</th>
+                                    <th>Value</th>
+                                    <th>Stage</th>
+                                    <th>Probability</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for deal in lead.deals.all %}
+                                <tr>
+                                    <td class="ps-4 fw-bold text-dark">{{ deal.title }}</td>
+                                    <td class="text-success fw-bold">${{ deal.value }}</td>
+                                    <td><span class="badge bg-info rounded-pill">{{ deal.get_stage_display }}</span></td>
+                                    <td>{{ deal.probability }}%</td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="4" class="text-center py-4 text-muted small">No active deals associated with this lead.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

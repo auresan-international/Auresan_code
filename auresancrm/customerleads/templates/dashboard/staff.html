@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lead Arena - Operator Dashboard</title>
+
+    <!-- Bootstrap 5.3 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@2.0.1"></script>
+
+
+    <!-- HTMX CSRF Configuration -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Get CSRF token from cookie
+            function getCookie(name) {
+                let cookieValue = null;
+                if (document.cookie && document.cookie !== '') {
+                    const cookies = document.cookie.split(';');
+                    for (let i = 0; i < cookies.length; i++) {
+                        const cookie = cookies[i].trim();
+                        if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                            cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                            break;
+                        }
+                    }
+                }
+                return cookieValue;
+            }
+            // Set CSRF token for HTMX requests
+            htmx.on('htmx:configRequest', (e) => {
+                const csrfToken = getCookie('csrftoken');
+                if (csrfToken) {
+                    e.detail.headers['X-CSRFToken'] = csrfToken;
+                }
+            });
+        });
+    </script>
+
+    <!-- SIP.js for WebRTC Calling -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/sip.js/0.21.2/sip.min.js"></script>
+
+    {% load static %}
+    <!-- Link to your dashboard-specific stylesheet -->
+    <link rel="stylesheet" href="{% static 'css/staff_dashboard/dashboard_partial.css' %}">
+
+    <style>
+        :root {
+            --primary:    #1e40af;
+            --primary-dark: #1e3a8a;
+            --accent:     #3b82f6;
+            --success:    #10b981;
+            --warning:    #f59e0b;
+            --gray:       #6b7280;
+            --light:      #f3f4f6;
+            --bg:         #f8fafc;
+            --text:       #111827;
+            --text-light: #4b5563;
+            --border:     #e5e7eb;
+        }
+
+        * { margin:0; padding:0; box-sizing:border-box; }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.5;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            padding: 0.75rem 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+        }
+
+        .logo { font-size: 1.5rem; font-weight: 700; }
+
+        .header-controls { display: flex; align-items: center; gap: 1rem; }
+
+        .status-group {
+            display: flex;
+            gap: 0.5rem;
+            {% comment %} background: rgba(255,255,255,0.12); {% endcomment %}
+            padding: 0.35rem 0.6rem;
+            border-radius: 8px;
+        }
+
+        .status-btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            color: black;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            transition: all 0.18s;
+        }
+
+        .status-btn:hover { background: rgba(255,255,255,0.2); }
+
+        .start-btn { background: var(--success); }
+        .offline-btn { background: var(--gray); }
+
+        .user-section {
+            display: flex;
+            align-items: center;
+            gap: 0.9rem;
+            background: rgba(255,255,255,0.1);
+            padding: 0.4rem 0.9rem;
+            border-radius: 8px;
+        }
+
+        .dashboard-container {
+            display: flex;
+            min-height: calc(100vh - 62px);
+        }
+
+        .sidebar {
+            width: 220px;
+            background: white;
+            border-right: 1px solid var(--border);
+            padding: 1.25rem 0;
+        }
+
+        .sidebar-menu {
+            list-style: none;
+        }
+
+        .menu-item {
+            display: flex;
+            align-items: center;
+            gap: 0.9rem;
+            padding: 0.95rem 1.25rem;
+            color: var(--text-light);
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+
+        .menu-item:hover,
+        .menu-item.active {
+            background: #eff6ff;
+            color: var(--accent);
+            border-left: 4px solid var(--accent);
+        }
+
+        .main-content {
+            flex: 1;
+            padding: 1.5rem;
+            background: var(--light);
+            position: relative;
+        }
+
+        .htmx-indicator {
+            position: absolute;
+            inset: 0;
+            background: rgba(255,255,255,0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+
+        .htmx-request .htmx-indicator {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        @media (max-width: 1024px) {
+            .dashboard-container { flex-direction: column; }
+            .sidebar { width: 100%; border-right: none; border-bottom: 1px solid var(--border); }
+            .sidebar-menu { display: flex; overflow-x: auto; justify-content: center; padding: 0.5rem; }
+        }
+
+        /* Softphone Widget Styles */
+        #softphone-widget {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 300px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            z-index: 1000;
+            display: none; /* Hidden by default */
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+        .phone-header {
+            background: var(--primary);
+            color: white;
+            padding: 10px 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .phone-status { font-size: 0.8rem; opacity: 0.9; }
+        .phone-body { padding: 20px; text-align: center; }
+        .phone-display {
+            width: 100%;
+            padding: 10px;
+            font-size: 1.2rem;
+            margin-bottom: 15px;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            text-align: center;
+        }
+        .dial-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        .dial-btn {
+            padding: 10px;
+            border: 1px solid var(--border);
+            background: var(--bg);
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .dial-btn:hover { background: var(--light); }
+        .call-actions { display: flex; gap: 10px; }
+        .action-btn { flex: 1; padding: 10px; border: none; border-radius: 6px; color: white; cursor: pointer; }
+        .btn-call { background: var(--success); }
+        .btn-hangup { background: #ef4444; }
+    </style>
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+<style>
+#blur-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+
+    background: rgba(0,0,0,0.25);
+    backdrop-filter: blur(8px);
+
+    display: none;
+    z-index: 1000;
+}
+
+/* keep header ABOVE blur */
+.header {
+    position: relative;
+    z-index: 2000;
+}
+
+.break-message {
+    color: white;
+    text-align: center;
+    margin-top: 20%;
+    font-size: 26px;
+    font-weight: bold;
+}
+</style>  
+<script>
+function goOnBreak() {
+    document.getElementById("blur-overlay").style.display = "block";
+
+    document.getElementById("breakBtn").style.display = "none";
+    document.getElementById("resumeBtn").style.display = "inline-block";
+}
+
+function resumeSystem() {
+    document.getElementById("blur-overlay").style.display = "none";
+
+    document.getElementById("breakBtn").style.display = "inline-block";
+    document.getElementById("resumeBtn").style.display = "none";
+}
+</script>
+<div id="blur-overlay">
+    <div style="
+        color: white;
+        text-align: center;
+        margin-top: 20%;
+        font-size: 24px;
+        font-weight: bold;">
+        SYSTEM ON BREAK
+    </div>
+</div>
+
+<!-- Header -->
+    <header class="header">
+        <div class="logo">AURESAN INTERNATIONAL LIMITED</div>
+
+        <div class="header-controls">
+            <div class="status-group">
+<button class="status-btn" onclick="goOnBreak()" id="breakBtn">
+    <i class="fas fa-coffee"></i> On break
+</button>
+
+<button class="status-btn" onclick="resumeSystem()" id="resumeBtn" style="display:none;">
+    <i class="fas fa-play"></i> Resume
+</button>  
+<button class="status-btn" onclick="goOnEducation()">
+    <i class="fas fa-book-open"></i> Education
+</button>
+               <button class="status-btn"
+        hx-get="{% url 'start_auto_dial'%}"
+        hx-target="this"
+        hx-swap="outerHTML"
+        class="btn btn-success"><i class="fas fa-phone-volume"></i> Start calling</button>
+                <button class="status-btn offline-btn"><i class="fas fa-power-off"></i> Go offline</button>
+            </div>
+
+            <div class="user-section">
+                <div class="user-avatar">
+                    {% if user.first_name %}
+                        {{ user.first_name|slice:":1"|upper }}
+                    {% else %}
+                        {{ user.username|slice:":1"|upper }}
+                    {% endif %}
+                </div>
+                <div class="user-info">
+                    <span class="username">{{ user.get_full_name|default:user.username }}</span>
+                    <span class="user-role">- Operator</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="dashboard-container">
+
+        <!-- Sidebar with HTMX -->
+        <nav class="sidebar">
+            <ul class="sidebar-menu" id="sidebar-menu">
+                <li>
+                    <a href="{% url 'staff_dashboard' %}"
+                       class="menu-item {% if active_tab == 'dashboard' %}active{% endif %}"
+                       hx-get="{% url 'staff_dashboard' %}"
+                       hx-target="#main-content"
+                       hx-swap="innerHTML"
+                       hx-push-url="true"
+                       hx-indicator=".htmx-indicator"
+                       hx-on::after-request="document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active')); this.classList.add('active')"
+                       >
+                        <i class="fas fa-home"></i> Dashboard
+                    </a>
+                </li>
+        
+
+                <li>
+                    <a href="{% url 'call_requests' %}" class="menu-item {% if active_tab == 'call_requests' %}active{% endif %}"
+                       hx-get="{% url 'call_requests' %}"
+                       hx-target="#main-content"
+                       hx-swap="innerHTML"
+                       hx-push-url="true"
+                       hx-indicator=".htmx-indicator"
+                       hx-on::after-request="document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active')); this.classList.add('active')"
+                       >
+                         <i class="fas fa-phone-volume"></i> Call Requests
+                    </a>
+                </li>
+
+                <li>
+                    <a href="{% url 'my_conversations' %}" class="menu-item {% if active_tab == 'conversations' %}active{% endif %}"
+                       hx-get="{% url 'my_conversations' %}"
+                       hx-target="#main-content"
+                       hx-swap="innerHTML"
+                       hx-push-url="true"
+                       hx-indicator=".htmx-indicator"
+                       hx-on::after-request="document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active')); this.classList.add('active')"
+                       >
+                         <i class="fas fa-comment-dots"></i> My conversations
+                    </a>
+                </li>
+
+                <li>
+                    <a href="{% url 'staff_charts' %}" class="menu-item {% if active_tab == 'charts' %}active{% endif %}"
+                       hx-get="{% url 'staff_charts' %}"
+                       hx-target="#main-content"
+                       hx-swap="innerHTML"
+                       hx-push-url="true"
+                       hx-indicator=".htmx-indicator"
+                       hx-on::after-request="document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active')); this.classList.add('active')"
+                       >
+                        <i class="fas fa-chart-pie"></i> Charts
+                    </a>
+                </li>
+
+                <li>
+                    <a href="{% url 'logout' %}"
+                       class="menu-item">
+                        <i class="fas fa-sign-out-alt"></i> Logout
+                    </a>
+                </li>
+            </ul>
+        </nav>
+
+        <!-- Main content area that will be replaced -->
+        <main id="main-content" class="main-content">
+            <!-- Loading indicator -->
+            <div class="htmx-indicator">
+                <i class="fas fa-spinner fa-spin fa-2x"></i>
+                <div style="margin-top: 1rem;">Loading...</div>
+            </div>
+
+            <!-- Django Messages -->
+            {% if messages %}
+            <div id="django-messages" style="position: fixed; top: 20px; right: 20px; z-index: 1050; max-width: 400px;">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show mb-2" role="alert" style="background: #fee2e2; border: 1px solid #fecaca; color: #991b1b; padding: 0.75rem 1rem; border-radius: 6px;">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" style="float: right; background: none; border: none; font-size: 1.2rem; cursor: pointer;">&times;</button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            <!-- Initial content (dashboard) -->
+            {% include content_template|default:'dashboard/partials/dashboard.html' %}
+        </main>
+    </div>
+
+    <!-- Softphone Widget HTML -->
+    <div id="softphone-widget">
+        <div class="phone-header">
+            <span><i class="fas fa-phone-alt"></i> Phone</span>
+            <span id="sip-status" class="phone-status">Disconnected</span>
+        </div>
+        <div class="phone-body">
+            <input type="text" id="phone-display" class="phone-display" placeholder="Enter number...">
+            
+            <!-- Audio Element for Call Audio -->
+            <audio id="remoteAudio" autoplay></audio>
+
+            <div class="call-actions">
+                <button class="action-btn btn-call" onclick="makeCall()"><i class="fas fa-phone"></i> Call</button>
+                <button class="action-btn btn-hangup" onclick="hangupCall()"><i class="fas fa-phone-slash"></i> End</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let userAgent;
+        let session;
+
+        async function startAutoDial() {
+            const btn = document.querySelector('.start-btn');
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Dialing...';
+            
+            try {
+                const response = await fetch("{% url 'start_auto_dial' %}");
+                const data = await response.json();
+                
+                if (data.status === 'success') {
+                    alert("Calling lead: " + data.lead_name);
+                } else {
+                    alert(data.message || "Queue is empty.");
+                }
+            } finally {
+                btn.innerHTML = '<i class="fas fa-phone-volume"></i> Start calling';
+            }
+        }
+
+        // 1. Configuration (Injected from Django View)
+        const sipConfig = {
+            uri: "{{ sip_config.uri }}",
+            password: "{{ sip_config.password }}", 
+            wsServers: "{{ sip_config.ws_servers }}",
+            displayName: "{{ user.get_full_name }}"
+        };
+
+        function togglePhone() {
+            const widget = document.getElementById('softphone-widget');
+            if (widget.style.display === 'none' || widget.style.display === '') {
+                widget.style.display = 'block';
+                if(!userAgent) initPhone();
+            } else {
+                widget.style.display = 'none';
+            }
+        }
+
+        async function initPhone() {
+            document.getElementById('sip-status').innerText = "Connecting...";
+            
+            // Simple UserAgent Options
+            const options = {
+                uri: sipConfig.uri,
+                transportOptions: {
+                    server: sipConfig.wsServers
+                },
+                authorizationUsername: "{{ user.username }}", // Often same as extension
+                authorizationPassword: sipConfig.password,
+                delegate: {
+                    onConnect: () => document.getElementById('sip-status').innerText = "Connected",
+                    onDisconnect: () => document.getElementById('sip-status').innerText = "Disconnected",
+                    onInvite: (invitation) => {
+                        // Handle incoming calls here
+                        session = invitation;
+                        invitation.accept(); 
+                    }
+                }
+            };
+
+            userAgent = new SIP.UserAgent(options);
+            await userAgent.start();
+        }
+
+        function makeCall() {
+            const number = document.getElementById('phone-display').value;
+            if(!number || !userAgent) return;
+
+            const target = SIP.UserAgent.makeURI(`sip:${number}@your-pbx-domain.com`);
+            if (!target) return;
+
+            // Create Inviter
+            const inviter = new SIP.Inviter(userAgent, target);
+            session = inviter;
+
+            // Setup media
+            inviter.stateChange.addListener((newState) => {
+                if (newState === SIP.SessionState.Established) {
+                    const remoteStream = new MediaStream();
+                    inviter.sessionDescriptionHandler.peerConnection.getReceivers().forEach((receiver) => {
+                        if (receiver.track) remoteStream.addTrack(receiver.track);
+                    });
+                    document.getElementById('remoteAudio').srcObject = remoteStream;
+                }
+            });
+
+            inviter.invite();
+        }
+
+        function hangupCall() {
+            if(session) {
+                session.bye(); // or session.reject() if incoming
+                session = null;
+            }
+        }
+    </script>
+
+    <!-- Optional: small script to help with active state on initial load / direct links -->
+    <script>
+        // Optional: make sure active class is correct when page loads directly
+        document.addEventListener('DOMContentLoaded', () => {
+            const currentPath = window.location.pathname;
+            document.querySelectorAll('.menu-item').forEach(link => {
+                if (link.getAttribute('href') === currentPath) {
+                    document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
+                    link.classList.add('active');
+                }
+            });
+        });
+    </script>
+
+    <!-- Bootstrap 5.3 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

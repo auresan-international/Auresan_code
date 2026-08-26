@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% load static humanize %}
+
+{% block title %}Analytics - CRM{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <h2 class="mb-0 section-title">Analytics & Reports</h2>
+        <a href="{% url 'reports' %}" class="btn btn-outline-primary px-4">
+            <i class="fas fa-file-alt me-2"></i> View Reports
+        </a>
+    </div>
+
+    <!-- Key Metrics -->
+    <div class="row g-4 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="stat-card dashboard-card p-4 h-100">
+                <h6 class="stat-label">Conversion Rate</h6>
+                <div class="stat-number">{{ conversion_rate|floatformat:1 }}%</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card stat-card.success dashboard-card p-4 h-100">
+                <h6 class="stat-label">Total Leads</h6>
+                <div class="stat-number">{{ total_leads|intcomma }}</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card stat-card.warning dashboard-card p-4 h-100">
+                <h6 class="stat-label">Lead Statuses</h6>
+                <div class="stat-number">{{ leads_by_status|length }}</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card stat-card.info dashboard-card p-4 h-100">
+                <h6 class="stat-label">Sources Tracked</h6>
+                <div class="stat-number">{{ leads_by_source|length }}</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Leads by Source -->
+        <div class="col-lg-6">
+            <div class="card dashboard-card shadow-custom h-100">
+                <div class="card-header bg-white border-bottom py-3 px-4">
+                    <h6 class="fw-bold mb-0"><i class="fas fa-filter me-2 text-primary"></i>Leads by Source</h6>
+                </div>
+                <div class="card-body p-4">
+                    {% for source in leads_by_source %}
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="text-capitalize fw-semibold">{{ source.source|default:"Unknown" }}</span>
+                            <span class="text-muted">{{ source.count }}</span>
+                        </div>
+                        <div class="progress" style="height: 10px;">
+                            <div class="progress-bar bg-primary" role="progressbar"
+                                 style="width: {% widthratio source.count max_source_count 100 %}%;"
+                                 aria-valuenow="{{ source.count }}" aria-valuemin="0" aria-valuemax="{{ max_source_count }}">
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="text-muted text-center py-4 mb-0">No source data available.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Leads by Status -->
+        <div class="col-lg-6">
+            <div class="card dashboard-card shadow-custom h-100">
+                <div class="card-header bg-white border-bottom py-3 px-4">
+                    <h6 class="fw-bold mb-0"><i class="fas fa-tasks me-2 text-success"></i>Leads by Status</h6>
+                </div>
+                <div class="card-body p-4">
+                    {% for status in leads_by_status %}
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span class="text-capitalize fw-semibold">{{ status.status|default:"Unknown" }}</span>
+                            <span class="text-muted">{{ status.count }}</span>
+                        </div>
+                        <div class="progress" style="height: 10px;">
+                            <div class="progress-bar bg-success" role="progressbar"
+                                 style="width: {% widthratio status.count max_status_count 100 %}%;"
+                                 aria-valuenow="{{ status.count }}" aria-valuemin="0" aria-valuemax="{{ max_status_count }}">
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <p class="text-muted text-center py-4 mb-0">No status data available.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

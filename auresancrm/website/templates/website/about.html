@@ -1,0 +1,61 @@
+{% extends 'website/base.html' %}
+{% load static %}
+
+{% block title %}About Us | AURESAN INTERNATIONAL LIMITED{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <div class="card border-0 shadow-lg rounded-4 overflow-hidden p-4 p-md-5 bg-white">
+                <div class="text-center mb-5">
+                    <span class="badge rounded-pill px-3 py-2 fw-bold text-dark mb-2" style="background: #f59e0b;">OUR COMPANY</span>
+                    <h1 class="display-5 fw-extrabold text-dark">About AURESAN INTERNATIONAL LIMITED</h1>
+                    <p class="lead text-muted max-w-2xl mx-auto">Committed to advancing natural nutrition through research, purity, and clinical efficacy.</p>
+                </div>
+
+                <div class="row g-4 align-items-center mb-5">
+                    <div class="col-lg-6">
+                        <img src="{% static 'website/assets/hero_supplement.png' %}" alt="AURESAN INTERNATIONAL LIMITED" class="img-fluid rounded-4 shadow">
+                    </div>
+                    <div class="col-lg-6">
+                        <h3 class="fw-bold text-success mb-3">Pioneering Bio-Active Supplements</h3>
+                        <p class="text-secondary leading-relaxed">
+                            <strong>AURESAN INTERNATIONAL LIMITED</strong> is dedicated to delivering premium, bio-optimized natural supplements designed for immunity enhancement, blood sugar management, cellular rejuvenation, and active endurance.
+                        </p>
+                        <p class="text-secondary leading-relaxed">
+                            Our product line is manufactured in state-of-the-art ISO and GMP certified facilities, utilizing zero artificial additives or synthetic fillers.
+                        </p>
+                    </div>
+                </div>
+
+                <h3 class="fw-bold text-dark mb-4 text-center">Why Customers Choose AURESAN</h3>
+                <div class="row g-4">
+                    <div class="col-md-4 text-center">
+                        <div class="p-4 rounded-4 bg-light h-100">
+                            <i class="fas fa-microscope text-success fa-2x mb-3"></i>
+                            <h5 class="fw-bold">Standardized Extracts</h5>
+                            <p class="text-muted small mb-0">High-potency botanical ingredients verified through third-party lab testing.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-center">
+                        <div class="p-4 rounded-4 bg-light h-100">
+                            <i class="fas fa-certificate text-warning fa-2x mb-3"></i>
+                            <h5 class="fw-bold">Certified Manufacturing</h5>
+                            <p class="text-muted small mb-0">Strict adherence to international safety and pharmaceutical guidelines.</p>
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-center">
+                        <div class="p-4 rounded-4 bg-light h-100">
+                            <i class="fas fa-headset text-primary fa-2x mb-3"></i>
+                            <h5 class="fw-bold">Dedicated Care</h5>
+                            <p class="text-muted small mb-0">Personalized customer guidance and fast confidential nationwide delivery.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,261 @@
+{% extends "base.html" %}
+{% load static humanize %}  <!-- for |naturaltime, |intcomma -->
+
+{% block title %}Tasks & Reminders - CRM{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid py-4">
+
+    <!-- Header + Actions -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <h2 class="mb-0 section-title">Tasks & Reminders</h2>
+        <div class="d-flex gap-2">
+            <a href="{% url 'task_create' %}" class="btn btn-primary px-4">
+                <i class="fas fa-plus me-2"></i> New Task
+            </a>
+            <button class="btn btn-outline-secondary px-3" data-bs-toggle="modal" data-bs-target="#filterModal">
+                <i class="fas fa-filter me-1"></i> Filters
+            </button>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="row g-4 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="stat-card dashboard-card p-4 h-100">
+                <h6 class="stat-label">Total Tasks</h6>
+                <div class="stat-number">{{ total_tasks|intcomma }}</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card stat-card.warning dashboard-card p-4 h-100">
+                <h6 class="stat-label">Overdue</h6>
+                <div class="stat-number text-danger">{{ overdue_tasks|intcomma }}</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card stat-card.success dashboard-card p-4 h-100">
+                <h6 class="stat-label">Due Today</h6>
+                <div class="stat-number">{{ due_today|intcomma }}</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card stat-card.info dashboard-card p-4 h-100">
+                <h6 class="stat-label">Completed</h6>
+                <div class="stat-number">{{ completed_tasks|intcomma }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters (can be in modal or inline) -->
+    <div class="card dashboard-card shadow-custom mb-4">
+        <div class="card-body">
+            <form method="get" class="row g-3">
+                <div class="col-md-4">
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fas fa-search"></i></span>
+                        <input type="text" name="q" class="form-control" placeholder="Search title, description, assigned..." value="{{ request.GET.q }}">
+                    </div>
+                </div>
+
+                <div class="col-md-3">
+                    <select name="status" class="form-select">
+                        <option value="">All Status</option>
+                        {% for status_val, status_display in task_status_choices %}
+                            <option value="{{ status_val }}" {% if request.GET.status == status_val %}selected{% endif %}>
+                                {{ status_display }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-md-3">
+                    <select name="priority" class="form-select">
+                        <option value="">All Priority</option>
+                        {% for prio_val, prio_display in task_priority_choices %}
+                            <option value="{{ prio_val }}" {% if request.GET.priority == prio_val %}selected{% endif %}>
+                                {{ prio_display }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-md-2">
+                    <select name="assigned_to" class="form-select">
+                        <option value="">All Assignees</option>
+                        {% for user in users %}
+                            <option value="{{ user.id }}" {% if request.GET.assigned_to == user.id|stringformat:"s" %}selected{% endif %}>
+                                {{ user.get_full_name|default:user.username }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="col-12 col-sm-auto ms-auto d-flex gap-2">
+                    <button type="submit" class="btn btn-primary px-4">Filter</button>
+                    <a href="{% url 'tasks' %}" class="btn btn-outline-secondary px-4">Reset</a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tasks Table -->
+    <div class="card dashboard-card shadow-custom overflow-hidden">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th scope="col"><input type="checkbox" id="select-all"></th>
+                            <th scope="col">Title</th>
+                            <th scope="col">Related Lead / Deal</th>
+                            <th scope="col">Assigned To</th>
+                            <th scope="col">Priority</th>
+                            <th scope="col">Status</th>
+                            <th scope="col">Due Date</th>
+                            <th scope="col">Created</th>
+                            <th scope="col">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for task in page_obj %}
+                        <tr {% if task.is_overdue %}class="table-danger"{% endif %}>
+                            <td><input type="checkbox" class="task-checkbox" value="{{ task.id }}"></td>
+                            <td>
+                                <strong>{{ task.title|truncatechars:60 }}</strong>
+                                {% if task.description %}
+                                    <br><small class="text-muted">{{ task.description|truncatechars:80 }}</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if task.related_lead %}
+                                    <a href="{% url 'lead_detail' task.related_lead.pk %}">
+                                        {{ task.related_lead.name|default:"Lead" }}
+                                    </a>
+                                {% else %}
+                                    —
+                                {% endif %}
+                            </td>
+                            <td>{{ task.assigned_to.get_full_name|default:"Unassigned" }}</td>
+                            <td>
+                                <span class="badge 
+                                    {% if task.priority == 'high' %}bg-danger
+                                    {% elif task.priority == 'medium' %}bg-warning
+                                    {% else %}bg-secondary{% endif %}">
+                                    {{ task.get_priority_display }}
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge 
+                                    {% if task.status == 'completed' %}bg-success
+                                    {% elif task.status == 'in_progress' %}bg-primary
+                                    {% elif task.is_overdue %}bg-danger
+                                    {% else %}bg-secondary{% endif %}">
+                                    {{ task.get_status_display }}
+                                </span>
+                            </td>
+                            <td>
+                                {{ task.due_date|date:"d M Y" }}
+                                {% if task.is_overdue %}
+                                    <span class="text-danger small ms-2">(Overdue)</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ task.created_at|naturaltime }}</td>
+                            <td>
+                                <div class="d-flex gap-2">
+                                    <a href="{% url 'task_detail' task.pk %}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    <a href="{% url 'task_update' task.pk %}" class="btn btn-sm btn-outline-secondary">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    {% if task.status != 'completed' %}
+                                        <a href="{% url 'task_complete' task.pk %}" class="btn btn-sm btn-outline-success">
+                                            <i class="fas fa-check"></i>
+                                        </a>
+                                    {% endif %}
+                                    <a href="{% url 'task_delete' task.pk %}" class="btn btn-sm btn-outline-danger">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="9" class="text-center py-5 text-muted">
+                                <i class="fas fa-tasks fa-4x mb-3 opacity-50"></i>
+                                <p>No tasks found matching your filters.</p>
+                                <a href="{% url 'task_create' %}" class="btn btn-outline-primary mt-2">
+                                    Create your first task
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if page_obj.has_other_pages %}
+            <nav aria-label="Tasks pagination" class="mt-4">
+                <ul class="pagination justify-content-center mb-0">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item"><a class="page-link" href="?page=1">&laquo;</a></li>
+                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">Previous</a></li>
+                    {% endif %}
+
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                        {% else %}
+                        <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">Next</a></li>
+                    <li class="page-item"><a class="page-link" href="?page={{ page_obj.paginator.num_pages }}">&raquo;</a></li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Selected count (for future bulk actions) -->
+    <div class="mt-3 text-muted small">
+        Selected: <span id="selected-count">0</span> tasks
+    </div>
+
+</div>
+
+{% endblock content %}
+
+{% block extra_css %}
+<style>
+    .table-danger {
+        background-color: rgba(220, 53, 69, 0.08) !important;
+    }
+    .stat-card:hover {
+        transform: translateY(-3px);
+    }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Select all checkbox
+document.getElementById('select-all')?.addEventListener('change', function(e) {
+    document.querySelectorAll('.task-checkbox').forEach(cb => cb.checked = e.target.checked);
+    document.getElementById('selected-count').textContent = document.querySelectorAll('.task-checkbox:checked').length;
+});
+
+// Update count
+document.querySelectorAll('.task-checkbox').forEach(cb => {
+    cb.addEventListener('change', () => {
+        document.getElementById('selected-count').textContent = document.querySelectorAll('.task-checkbox:checked').length;
+    });
+});
+</script>
+{% endblock %}

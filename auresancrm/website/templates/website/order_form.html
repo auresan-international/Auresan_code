@@ -1,0 +1,37 @@
+{% extends 'website/base.html' %}
+
+{% block title %}Place Order | AURESAN INTERNATIONAL LIMITED{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <div class="card border-0 shadow-lg rounded-4 p-4 p-md-5 bg-white">
+                <div class="text-center mb-4">
+                    <span class="badge rounded-pill px-3 py-2 fw-bold text-dark mb-2" style="background: #f59e0b;">DIRECT ORDER</span>
+                    <h2 class="fw-extrabold text-dark">Place an Official Order</h2>
+                    <p class="text-muted small">Select your supplement package and delivery information for AURESAN INTERNATIONAL LIMITED.</p>
+                </div>
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="form-container">
+                        {% for field in form %}
+                            <div class="mb-3">
+                                <label class="form-label fw-semibold small text-dark">{{ field.label }}</label>
+                                {{ field }}
+                                {% if field.errors %}
+                                    <div class="text-danger small mt-1">{{ field.errors }}</div>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <button class="btn btn-brand-primary btn-lg w-100 rounded-pill fw-bold py-3 mt-3" type="submit">
+                        <i class="fas fa-check-circle me-2"></i>Confirm & Submit Order
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

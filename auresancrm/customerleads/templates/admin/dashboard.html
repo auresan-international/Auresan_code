@@ -1,0 +1,299 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - JoelZone CRM{% endblock %}
+
+{% block content %}
+<div class="row fade-in">
+    <div class="col-12">
+        <h1 class="section-title">Lead Management Dashboard</h1>
+        <p class="text-muted">Overview of your sales pipeline and lead performance</p>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <!-- Lead Statistics Cards -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stat-card h-100 slide-in-left">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="stat-number">{{ total_leads }}</h2>
+                        <p class="stat-label">TOTAL LEADS</p>
+                        <small class="text-white opacity-75">All time</small>
+                    </div>
+                    <i class="fas fa-users fa-2x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stat-card warning h-100 slide-in-left" style="animation-delay: 0.1s;">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="stat-number">{{ new_leads }}</h2>
+                        <p class="stat-label">NEW LEADS</p>
+                        <small class="text-white opacity-75">Require follow-up</small>
+                    </div>
+                    <i class="fas fa-bell fa-2x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stat-card success h-100 slide-in-left" style="animation-delay: 0.2s;">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="stat-number">{{ converted_leads }}</h2>
+                        <p class="stat-label">CONVERTED LEADS</p>
+                        <small class="text-white opacity-75">Became clients</small>
+                    </div>
+                    <i class="fas fa-trophy fa-2x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card stat-card danger h-100 slide-in-left" style="animation-delay: 0.3s;">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="stat-number">{{ hot_leads }}</h2>
+                        <p class="stat-label">HOT LEADS</p>
+                        <small class="text-white opacity-75">High priority</small>
+                    </div>
+                    <i class="fas fa-fire fa-2x opacity-50"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Pipeline Overview -->
+    <div class="col-xl-6 mb-4">
+        <div class="card stat-card info h-100 fade-in">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="card-title text-white mb-0">Pipeline Overview</h5>
+                    <i class="fas fa-funnel-dollar fa-2x opacity-50"></i>
+                </div>
+                <div class="pipeline-stats">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-white">New</span>
+                        <span class="text-white font-weight-bold">{{ new_leads }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-white">Contacted</span>
+                        <span class="text-white font-weight-bold">{{ status_counts.contacted|default:0 }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span class="text-white">Qualified</span>
+                        <span class="text-white font-weight-bold">{{ status_counts.qualified|default:0 }}</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span class="text-white">Proposal Sent</span>
+                        <span class="text-white font-weight-bold">{{ status_counts.proposal|default:0 }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Leads Activity -->
+    <div class="col-xl-6 mb-4">
+        <div class="card dashboard-card h-100 fade-in">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="card-title text-gradient mb-0">Recent Leads</h5>
+                    <a href="{% url 'leads' %}" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="list-group list-group-flush">
+                    {% for lead in recent_leads %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="fw-bold">{{ lead.name }}</span>
+                            <br>
+                            <small class="text-muted">{{ lead.company|default:"No company" }}</small>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-{{ lead.get_status_color }}">{{ lead.get_status_display }}</span>
+                            <br>
+                            <small class="text-muted">{{ lead.created_at|timesince }} ago</small>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="list-group-item text-center text-muted">
+                        No recent leads
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Upcoming Tasks -->
+    <div class="col-xl-6 mb-4">
+        <div class="card dashboard-card h-100 fade-in">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="card-title text-gradient mb-0">Upcoming Tasks</h5>
+                    <a href="{% url 'tasks' %}" class="btn btn-sm btn-outline-primary">View All</a>
+                </div>
+                <div class="list-group list-group-flush">
+                    {% for task in recent_tasks %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="fw-bold">{{ task.title }}</span>
+                            <br>
+                            <small class="text-muted">Due: {{ task.due_date|date:"M d, Y" }}</small>
+                        </div>
+                        <span class="badge bg-{{ task.get_priority_color }}">{{ task.get_priority_display }}</span>
+                    </div>
+                    {% empty %}
+                    <div class="list-group-item text-center text-muted">
+                        No upcoming tasks
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lead Sources -->
+    <div class="col-xl-6 mb-4">
+        <div class="card dashboard-card h-100 fade-in">
+            <div class="card-body">
+                <h5 class="card-title text-gradient mb-3">Lead Sources</h5>
+                <div class="list-group list-group-flush">
+                    {% for source in leads_by_source %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <span class="text-capitalize">{{ source.source|default:"Unknown" }}</span>
+                        <span class="badge bg-primary rounded-pill">{{ source.count }}</span>
+                    </div>
+                    {% empty %}
+                    <div class="list-group-item text-center text-muted">
+                        No lead source data
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Performance Metrics -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card dashboard-card fade-in">
+            <div class="card-body">
+                <h5 class="card-title text-gradient">Sales Performance</h5>
+                <div class="row text-center">
+                    <div class="col-md-3">
+                        <div class="p-3">
+                            <h3 class="text-primary">{{ conversion_rate|floatformat:1 }}%</h3>
+                            <p class="text-muted">Conversion Rate</p>
+                            <small class="text-success">
+                                <i class="fas fa-arrow-up"></i>
+                                Leads to clients
+                            </small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-3">
+                            <h3 class="text-success">
+                                {% with response_time=24 %}
+                                    {{ response_time }}h
+                                {% endwith %}
+                            </h3>
+                            <p class="text-muted">Avg Response Time</p>
+                            <small class="text-info">First contact</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-3">
+                            <h3 class="text-warning">
+                                {% with follow_ups=3.2 %}
+                                    {{ follow_ups }}
+                                {% endwith %}
+                            </h3>
+                            <p class="text-muted">Avg Follow-ups</p>
+                            <small class="text-warning">Per lead</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="p-3">
+                            <h3 class="text-danger">
+                                {{ status_counts.lost|default:0 }}
+                            </h3>
+                            <p class="text-muted">Lost Leads</p>
+                            <small class="text-danger">This month</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card dashboard-card fade-in">
+            <div class="card-body">
+                <h5 class="card-title text-gradient mb-4">Quick Actions</h5>
+                <div class="row text-center">
+                    <div class="col-md-2 col-6 mb-3">
+                        <a href="{% url 'lead_create' %}" class="btn btn-primary btn-lg p-3 w-100">
+                            <i class="fas fa-plus fa-2x mb-2"></i>
+                            <br>
+                            <small>Add Lead</small>
+                        </a>
+                    </div>
+                    <div class="col-md-2 col-6 mb-3">
+                        <a href="{% url 'task_create' %}" class="btn btn-success btn-lg p-3 w-100">
+                            <i class="fas fa-tasks fa-2x mb-2"></i>
+                            <br>
+                            <small>Create Task</small>
+                        </a>
+                    </div>
+                    <div class="col-md-2 col-6 mb-3">
+                        <a href="{% url 'interaction_create' %}" class="btn btn-info btn-lg p-3 w-100">
+                            <i class="fas fa-phone fa-2x mb-2"></i>
+                            <br>
+                            <small>Log Call</small>
+                        </a>
+                    </div>
+                    <div class="col-md-2 col-6 mb-3">
+                        <a href="{% url 'sales_pipeline' %}" class="btn btn-warning btn-lg p-3 w-100">
+                            <i class="fas fa-chart-line fa-2x mb-2"></i>
+                            <br>
+                            <small>Pipeline</small>
+                        </a>
+                    </div>
+                    <div class="col-md-2 col-6 mb-3">
+                        <a href="{% url 'analytics' %}" class="btn btn-danger btn-lg p-3 w-100">
+                            <i class="fas fa-chart-bar fa-2x mb-2"></i>
+                            <br>
+                            <small>Analytics</small>
+                        </a>
+                    </div>
+                    <div class="col-md-2 col-6 mb-3">
+                        <a href="{% url 'reports' %}" class="btn btn-dark btn-lg p-3 w-100">
+                            <i class="fas fa-file-alt fa-2x mb-2"></i>
+                            <br>
+                            <small>Reports</small>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
